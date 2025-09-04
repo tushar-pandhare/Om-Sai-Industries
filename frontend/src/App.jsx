@@ -7,6 +7,7 @@ import Contact from "./pages/Contact";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import { useState } from "react";
+import AdminOffers from "./pages/AdminOffers";
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
@@ -22,6 +23,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/admin" element={<AdminLogin setToken={setToken} />} />
         {token && <Route path="/admin-dashboard" element={<AdminDashboard />} />}
+        {token && <Route path="/admin-offers" element={<AdminOffers />} />}
       </Routes>
     </Router>
   );
