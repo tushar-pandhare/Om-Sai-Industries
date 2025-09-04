@@ -16,5 +16,5 @@ app.use("/omsai/offers", require("./routes/offerRoutes"));
 app.use("/omsai/messages", require("./routes/messageRoutes"));
 app.use("/omsai/admin", require("./routes/adminRoutes"));
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
