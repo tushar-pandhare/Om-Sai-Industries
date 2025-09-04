@@ -10,6 +10,7 @@ import { useState } from "react";
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
+  
 
   return (
     <Router>
@@ -20,7 +21,7 @@ function App() {
         <Route path="/offers" element={<Offers />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/admin" element={<AdminLogin setToken={setToken} />} />
-        {token && <Route path="/dashboard" element={<AdminDashboard />} />}
+        {token && <Route path="/admin-dashboard" element={<AdminDashboard />} />}
       </Routes>
     </Router>
   );
