@@ -16,7 +16,7 @@ const Products = () => {
       <div className="grid grid-cols-3 gap-4">
         {products.map(p => (
           <div key={p._id} className="border p-4 rounded shadow">
-            <img src={p.image} alt={p.name} className="h-40 w-full object-cover"/>
+            <img src={p.imageUrl} alt={p.name} className="h-40 w-full object-cover"/>
             <h3 className="text-xl font-semibold">{p.name}</h3>
             <p>{p.description}</p>
             <p className="text-green-600 font-bold">₹{p.price}</p>

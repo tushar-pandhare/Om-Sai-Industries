@@ -11,6 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/omsai/products", require("./routes/productRoutes"));
+app.use("omsai/products/routes", require("./routes/productRoutes"));
 app.use("/omsai/offers", require("./routes/offerRoutes"));
 app.use("/omsai/messages", require("./routes/messageRoutes"));
 app.use("/omsai/admin", require("./routes/adminRoutes"));
