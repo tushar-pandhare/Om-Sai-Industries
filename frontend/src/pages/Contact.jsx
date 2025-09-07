@@ -1,8 +1,13 @@
 import { useState } from "react";
 import axios from "axios";
-import contactImg from "../assets/contactbg.png"
+import contactImg from "../assets/contactbg.png";
 const Contact = () => {
-  const [form, setForm] = useState({ name: "", email: "", mobile: "", message: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    mobile: "",
+    message: "",
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -41,7 +46,8 @@ const Contact = () => {
             Contact Us ✍️
           </h2>
           <p className="text-gray-600 text-sm mb-6 text-center">
-            We'd love to hear from you! Fill out the form and we will get back to you.
+            We'd love to hear from you! Fill out the form and we will get back
+            to you.
           </p>
 
           {successMsg && (
@@ -98,11 +104,10 @@ const Contact = () => {
       {/* Right Side - Image */}
       <div className="hidden md:flex w-1/2 bg-gray-50">
         <img
-  src="https://images.unsplash.com/photo-1587560699334-bea93391dcef?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-  alt="Contact Illustration"
-  className="object-cover w-full h-full"
-/>
-
+          src="https://images.unsplash.com/photo-1587560699334-bea93391dcef?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+          alt="Contact Illustration"
+          className="object-cover w-full h-full"
+        />
       </div>
     </div>
   );
