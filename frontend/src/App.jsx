@@ -4,26 +4,44 @@ import Home from "./pages/Home";
 import Products from "./pages/Products";
 import Offers from "./pages/Offers";
 import Contact from "./pages/Contact";
-import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
-import { useState } from "react";
 import AdminOffers from "./pages/AdminOffers";
+import LoginRegister from "./pages/LoginRegister";
+// import UserDashboard from "./pages/UserDashboard"; // create this page
+import { useState } from "react";
+import Cart from "./pages/Cart";
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem("token"));
-  
+  const [role, setRole] = useState(localStorage.getItem("role")); // use role instead of token
 
   return (
     <Router>
       <Navbar />
       <Routes>
+        {/* Public Pages */}
         <Route path="/" element={<Home />} />
         <Route path="/products" element={<Products />} />
         <Route path="/offers" element={<Offers />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/admin" element={<AdminLogin setToken={setToken} />} />
-        {token && <Route path="/admin-dashboard" element={<AdminDashboard />} />}
-        {token && <Route path="/admin-offers" element={<AdminOffers />} />}
+        <Route path="/login" element={<LoginRegister setRole={setRole} />} />
+
+        {/* Admin-only Pages */}
+        {role === "admin" && (
+          <>
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/admin-offers" element={<AdminOffers />} />
+          </>
+        )}
+
+        {/* User-only Pages */}
+        {role === "user" && (
+          <>
+            {/* <Route path="/user-dashboard" element={<UserDashboard />} /> */}
+            <Route path="/" element={<Home />} />
+            <Route path="/cart" element={<Cart />} />
+
+          </>
+        )}
       </Routes>
     </Router>
   );
