@@ -1,9 +1,21 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useCart } from "./CartContext";
+import toast, { Toaster } from "react-hot-toast";
+import { useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+
+function useQuery() {
+  return new URLSearchParams(useLocation().search);
+}
 
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { addToCart, cartItems } = useCart();
+  const query = useQuery();
+  const scrollToId = query.get("scrollTo");
+  const [highlighted, setHighlighted] = useState(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -19,99 +31,145 @@ const Products = () => {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    if (scrollToId && products.length > 0) {
+      const element = document.getElementById(`product-${scrollToId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+        setHighlighted(scrollToId);
+        setTimeout(() => setHighlighted(null), 2000);
+      }
+    }
+  }, [scrollToId, products]);
+
+  const isInCart = (productId) => {
+    return cartItems.some((item) => item.productId._id === productId);
+  };
+
+  const handleAddToCart = (product) => {
+    addToCart(product);
+    setHighlighted(product._id);
+    toast.success(`${product.name} added to cart!`);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pt-32 pb-16 px-4 sm:px-6 lg:px-8">
+      <Toaster position="top-right" />
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight lg:text-6xl">
-            Our Products
-          </h2>
-          <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-600">
-            Discover our premium collection of high-quality products
-          </p>
+        {/* Animated Header */}
+        <div className="text-center mb-20">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-5xl font-light font-serif text-slate-800 sm:text-6xl tracking-wide"
+          >
+            Our <span className="font-medium">Collection</span>
+          </motion.h2>
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: 96 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="mt-2 w-24 h-1 bg-gradient-to-r from-amber-400 to-amber-600 mx-auto"
+          ></motion.div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="mt-6 max-w-2xl mx-auto text-lg text-slate-600 font-light"
+          >
+            Curated excellence for the discerning individual
+          </motion.p>
         </div>
 
         {loading ? (
-          <div className="flex flex-col justify-center items-center py-20">
-            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="mt-6 text-lg text-gray-700 font-medium">Loading products...</p>
-          </div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-16">
-            <svg
-              className="mx-auto h-24 w-24 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          // Loader Animation
+          <div className="flex flex-col justify-center items-center py-28">
+            <motion.div
+              initial={{ rotate: 0 }}
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+              className="relative w-20 h-20"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1}
-                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-              />
-            </svg>
-            <h3 className="mt-4 text-xl font-medium text-gray-700">
-              No products available
-            </h3>
-            <p className="mt-2 text-gray-500">
-              Our collection is being updated. Please check back soon!
-            </p>
+              <div className="w-full h-full border-4 border-slate-200 rounded-full"></div>
+              <div className="absolute top-0 left-0 w-full h-full border-4 border-transparent rounded-full border-t-amber-500"></div>
+            </motion.div>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, repeat: Infinity, repeatType: "reverse" }}
+              className="mt-8 text-lg text-slate-500 font-light tracking-wide"
+            >
+              Curating collection...
+            </motion.p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {products.map((p) => (
-              <div
+          // Product Grid
+          <motion.div
+            layout
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 mt-12"
+          >
+            {products.map((p, index) => (
+              <motion.div
                 key={p._id}
-                className="bg-white rounded-2xl overflow-hidden shadow-lg transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl"
+                id={`product-${p._id}`}
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+                className={`group bg-white/80 backdrop-blur-sm rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 relative ${
+                  highlighted === p._id ? "ring-4 ring-amber-400" : ""
+                }`}
               >
-                <div className="relative h-56 w-full overflow-hidden">
+                {/* Image */}
+                <div className="relative h-72 w-full overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10"></div>
                   <img
                     src={p.imageUrl}
                     alt={p.name}
-                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                 </div>
+
+                {/* Content */}
                 <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-1">
-                    {p.name}
-                  </h3>
-                  <p className="text-gray-600 mb-4 line-clamp-2">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-lg font-medium text-slate-800 line-clamp-1 pr-2">
+                      {p.name}
+                    </h3>
+                    <p className="text-lg font-semibold text-amber-600 whitespace-nowrap">
+                      ₹{p.price}
+                    </p>
+                  </div>
+                  <p className="text-slate-500 text-sm font-light mb-5 line-clamp-2">
                     {p.description}
                   </p>
-                  <div className="flex items-center justify-between">
-                    <p className="text-lg font-bold text-green-600">₹{p.price}</p>
-                    <div className="flex space-x-2">
-                      <button className="p-2 bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200 transition-colors">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
-                      </button>
-                      <button className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors">
-                        Add to Cart
-                      </button>
-                    </div>
-                  </div>
+                  {!isInCart(p._id) && (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleAddToCart(p)}
+                      className="px-5 py-2.5 bg-slate-800 text-xs text-white tracking-widest uppercase rounded-full hover:bg-slate-900 transition-all duration-300 shadow-md flex items-center"
+                    >
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                        />
+                      </svg>
+                      Add to Cart
+                    </motion.button>
+                  )}
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
     </div>
