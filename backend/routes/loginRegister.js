@@ -2,40 +2,64 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/loginRegister");
-
 const router = express.Router();
+
+// Register
 router.post("/register", async (req, res) => {
   try {
-    const { username, mobileNumber , password } = req.body;
+    let { username, mobileNumber, password } = req.body;
 
+    username = username.toLowerCase(); // normalize
+
+    // Check existing
+    const existingUser = await User.findOne({ 
+      $or: [{ username }, { mobileNumber }] 
+    });
+    if (existingUser) {
+      return res.status(400).json({ error: "Username or Mobile already exists" });
+    }
+
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    const User = new User({ username, mobileNumber , password: hashedPassword });
-    await admin.save();
 
-    res.json({ message: "Admin registered successfully" });
+    const newUser = new User({ 
+      username, 
+      mobileNumber, 
+      password: hashedPassword 
+    });
+
+    await newUser.save();
+
+    res.json({ message: "User registered successfully" });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Admin login
+// Login
 router.post("/login", async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const admin = await Admin.findOne({ username });
+    let { username, password } = req.body;
+    username = username.toLowerCase(); // normalize
 
-    if (!admin) return res.status(400).json({ error: "Invalid credentials" });
+    const user = await User.findOne({ username });
+    if (!user) return res.status(400).json({ error: "Invalid credentials" });
 
-    const isMatch = await bcrypt.compare(password, admin.password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
     const token = jwt.sign(
-      { id: admin._id, username: admin.username },
-      process.env.JWT_SECRET,
+      { id: user._id, username: user.username },
+      process.env.JWT_SECRET || "fallbackSecret",
       { expiresIn: "1d" }
     );
 
-    res.json({ token, username: admin.username });
+    res.json({
+      token,
+      username: user.username,
+      role: "user", // add role if needed
+      message: "Login successful"
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
