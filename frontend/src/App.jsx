@@ -30,6 +30,7 @@ function App() {
           <>
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
             <Route path="/admin-offers" element={<AdminOffers />} />
+            <Route path="/cart" element={<Cart />} />
           </>
         )}
 
@@ -38,7 +39,7 @@ function App() {
           <>
             {/* <Route path="/user-dashboard" element={<UserDashboard />} /> */}
             <Route path="/" element={<Home />} />
-            <Route path="/cart" element={<Cart />} />
+    
 
           </>
         )}
