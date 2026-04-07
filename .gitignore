@@ -33,3 +33,6 @@ coverage/
 # OS system files
 .DS_Store
 Thumbs.db
+
+
+pkg.json.txt
