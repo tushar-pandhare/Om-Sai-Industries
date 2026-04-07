@@ -15,7 +15,7 @@ export default function adminNavbar() {
             {/* Profile Image Button */}
             <button onClick={() => setIsImageOpen(true)}>
               <img
-                src="https://via.placeholder.com/40"
+                src="https://fakeimg.pl/80x80"
                 alt="Profile"
                 className="w-10 h-10 rounded-full border-2 border-white hover:scale-105 transition"
               />
@@ -47,7 +47,7 @@ export default function adminNavbar() {
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
           <div className="relative">
             <img
-              src="https://via.placeholder.com/400"
+              src="https://fakeimg.pl/80x80"
               alt="Profile Large"
               className="rounded-lg shadow-lg max-h-[80vh]"
             />
