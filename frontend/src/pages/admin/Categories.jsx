@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { X, Edit, Trash2, Plus, Image as ImageIcon, Package, ArrowLeft } from 'lucide-react';
+import { X, Edit, Trash2, Plus, Image as ImageIcon, Package, ArrowLeft, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { fetchCategories, createCategory, updateCategory, deleteCategory } from '../../features/categories/categorySlice';
 import toast from 'react-hot-toast';
@@ -8,8 +8,12 @@ import toast from 'react-hot-toast';
 const Categories = () => {
   const dispatch = useDispatch();
   const { categories, loading } = useSelector((state) => state.categories);
+  const { userInfo } = useSelector((state) => state.auth);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -28,6 +32,8 @@ const Categories = () => {
         description: category.description || '',
         image: category.image || ''
       });
+      setImagePreview(category.image || '');
+      setImageFile(null);
     } else {
       setEditingCategory(null);
       setFormData({
@@ -35,6 +41,8 @@ const Categories = () => {
         description: '',
         image: ''
       });
+      setImagePreview('');
+      setImageFile(null);
     }
     setIsModalOpen(true);
   };
@@ -47,12 +55,40 @@ const Categories = () => {
       description: '',
       image: ''
     });
+    setImagePreview('');
+    setImageFile(null);
+    setUploading(false);
   };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
+    });
+  };
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please upload a valid image (JPG, PNG, WEBP)');
+      return;
+    }
+    
+    // Validate file size (max 2MB for categories)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image size should be less than 2MB');
+      return;
+    }
+    
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setFormData({
+      ...formData,
+      image: '' // Clear URL if file is selected
     });
   };
 
@@ -63,35 +99,85 @@ const Categories = () => {
       return toast.error('Category name is required');
     }
 
+    setUploading(true);
+
     try {
+      const submitData = new FormData();
+      
+      // Append category data as JSON
+      submitData.append('categoryData', JSON.stringify({
+        name: formData.name,
+        description: formData.description,
+        image: formData.image // URL fallback
+      }));
+      
+      // Append image file if selected
+      if (imageFile) {
+        submitData.append('image', imageFile);
+      }
+      
+      let result;
       if (editingCategory) {
-        const result = await dispatch(updateCategory({ id: editingCategory._id, categoryData: formData }));
-        if (updateCategory.fulfilled.match(result)) {
+        result = await fetch(`http://localhost:5000/api/categories/${editingCategory._id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${userInfo?.token}`
+          },
+          body: submitData
+        });
+        
+        if (result.ok) {
           toast.success('Category updated successfully');
+          dispatch(fetchCategories());
+          handleCloseModal();
         } else {
-          toast.error('Failed to update category');
+          const error = await result.json();
+          toast.error(error.message || 'Failed to update category');
         }
       } else {
-        const result = await dispatch(createCategory(formData));
-        if (createCategory.fulfilled.match(result)) {
+        result = await fetch('http://localhost:5000/api/categories', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${userInfo?.token}`
+          },
+          body: submitData
+        });
+        
+        if (result.ok) {
           toast.success('Category created successfully');
+          dispatch(fetchCategories());
+          handleCloseModal();
         } else {
-          toast.error('Failed to create category');
+          const error = await result.json();
+          toast.error(error.message || 'Failed to create category');
         }
       }
-      handleCloseModal();
     } catch (error) {
+      console.error('Error:', error);
       toast.error('Something went wrong');
+    } finally {
+      setUploading(false);
     }
   };
 
   const handleDelete = async (id, categoryName) => {
     if (window.confirm(`Are you sure you want to delete "${categoryName}"? This will also affect products in this category.`)) {
-      const result = await dispatch(deleteCategory(id));
-      if (deleteCategory.fulfilled.match(result)) {
-        toast.success('Category deleted successfully');
-      } else {
-        toast.error('Failed to delete category');
+      try {
+        const response = await fetch(`http://localhost:5000/api/categories/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${userInfo?.token}`
+          }
+        });
+        
+        if (response.ok) {
+          toast.success('Category deleted successfully');
+          dispatch(fetchCategories());
+        } else {
+          toast.error('Failed to delete category');
+        }
+      } catch (error) {
+        toast.error('Something went wrong');
       }
     }
   };
@@ -108,7 +194,7 @@ const Categories = () => {
             </div>
             <button
               onClick={() => handleOpenModal()}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-lg"
             >
               <Plus className="h-5 w-5" />
               Add New Category
@@ -121,8 +207,8 @@ const Categories = () => {
           <div className="mb-6">
             <div className="bg-white rounded-xl shadow-lg p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-100 rounded-lg">
-                  <Package className="h-5 w-5 text-indigo-600" />
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Package className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
                   <p className="text-sm text-slate-500">Total Categories</p>
@@ -136,7 +222,7 @@ const Categories = () => {
         {/* Categories Grid */}
         {loading ? (
           <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             <p className="mt-3 text-slate-500">Loading categories...</p>
           </div>
         ) : categories?.length === 0 ? (
@@ -148,7 +234,7 @@ const Categories = () => {
             <p className="text-slate-500 mb-4">Create your first category to start organizing products</p>
             <button
               onClick={() => handleOpenModal()}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-medium transition-colors inline-flex items-center gap-2"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-medium transition-colors inline-flex items-center gap-2"
             >
               <Plus className="h-5 w-5" />
               Create Category
@@ -176,7 +262,7 @@ const Categories = () => {
                   <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => handleOpenModal(category)}
-                      className="p-2 bg-white rounded-lg shadow-md hover:bg-indigo-50 transition-colors text-indigo-600"
+                      className="p-2 bg-white rounded-lg shadow-md hover:bg-blue-50 transition-colors text-blue-600"
                       title="Edit Category"
                     >
                       <Edit className="h-4 w-4" />
@@ -204,7 +290,7 @@ const Categories = () => {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleOpenModal(category)}
-                        className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                       >
                         Edit
                       </button>
@@ -226,8 +312,8 @@ const Categories = () => {
         {/* Modal */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-              <div className="flex justify-between items-center p-6 border-b border-slate-200">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center p-6 border-b border-slate-200 sticky top-0 bg-white">
                 <h2 className="text-xl font-bold text-slate-800">
                   {editingCategory ? 'Edit Category' : 'Create New Category'}
                 </h2>
@@ -251,7 +337,7 @@ const Categories = () => {
                       required
                       value={formData.name}
                       onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
                       placeholder="e.g., Electronics, Clothing, Books"
                       autoFocus
                     />
@@ -266,41 +352,93 @@ const Categories = () => {
                       rows="3"
                       value={formData.description}
                       onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none resize-none"
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none resize-none"
                       placeholder="Brief description of the category (optional)"
                     />
                   </div>
                   
+                  {/* Image Upload Section */}
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Image URL
+                      Category Image
                     </label>
-                    <input
-                      type="text"
-                      name="image"
-                      value={formData.image}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
-                      placeholder="https://example.com/category-image.jpg"
-                    />
-                    <p className="text-xs text-slate-500 mt-1">
-                      Enter a valid image URL for the category thumbnail
-                    </p>
+                    
+                    {/* Image Upload Area */}
+                    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-xl hover:border-blue-400 transition-colors">
+                      <div className="space-y-1 text-center">
+                        <Upload className="mx-auto h-12 w-12 text-slate-400" />
+                        <div className="flex text-sm text-slate-600">
+                          <label htmlFor="category-image" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none">
+                            <span>Upload an image</span>
+                            <input
+                              id="category-image"
+                              name="category-image"
+                              type="file"
+                              className="sr-only"
+                              accept="image/jpeg,image/jpg,image/png,image/webp"
+                              onChange={handleImageSelect}
+                            />
+                          </label>
+                          <p className="pl-1">or drag and drop</p>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          PNG, JPG, JPEG, WEBP up to 2MB
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* OR Divider */}
+                    <div className="relative my-4">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-slate-200"></div>
+                      </div>
+                      <div className="relative flex justify-center text-xs">
+                        <span className="px-2 bg-white text-slate-500">OR use image URL</span>
+                      </div>
+                    </div>
+
+                    {/* Image URL Input */}
+                    <div>
+                      <input
+                        type="text"
+                        name="image"
+                        value={formData.image}
+                        onChange={handleChange}
+                        disabled={!!imageFile}
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none disabled:bg-slate-100 disabled:cursor-not-allowed"
+                        placeholder="https://example.com/category-image.jpg"
+                      />
+                      {imageFile && (
+                        <p className="text-xs text-blue-600 mt-1">
+                          Using uploaded image. Clear to use URL instead.
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setImageFile(null);
+                              setImagePreview('');
+                            }}
+                            className="ml-2 text-red-500 hover:text-red-600"
+                          >
+                            Clear
+                          </button>
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   {/* Image Preview */}
-                  {formData.image && (
+                  {(imagePreview || formData.image) && (
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-2">
                         Preview
                       </label>
-                      <div className="relative w-full h-32 bg-slate-100 rounded-xl overflow-hidden">
+                      <div className="relative w-full h-40 bg-slate-100 rounded-xl overflow-hidden">
                         <img
-                          src={formData.image}
+                          src={imagePreview || formData.image}
                           alt="Preview"
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/400x200?text=Invalid+URL';
+                            e.target.src = 'https://via.placeholder.com/400x200?text=Invalid+Image';
                           }}
                         />
                       </div>
@@ -308,7 +446,7 @@ const Categories = () => {
                   )}
                 </div>
                 
-                <div className="flex justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50 rounded-b-2xl">
+                <div className="flex justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50 rounded-b-2xl sticky bottom-0">
                   <button
                     type="button"
                     onClick={handleCloseModal}
@@ -318,9 +456,17 @@ const Categories = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-colors"
+                    disabled={uploading}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    {editingCategory ? 'Update Category' : 'Create Category'}
+                    {uploading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        {editingCategory ? 'Updating...' : 'Creating...'}
+                      </>
+                    ) : (
+                      editingCategory ? 'Update Category' : 'Create Category'
+                    )}
                   </button>
                 </div>
               </form>
