@@ -1,19 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { fetchProductById, updateProduct } from '../../features/prdoducts/productSlice';
 import { fetchCategories } from '../../features/categories/categorySlice';
+import { 
+  ArrowLeft, Save, X, Plus, Trash2, Image as ImageIcon, 
+  Upload, AlertCircle, CheckCircle, Package, Tag, DollarSign,
+  Layers, FileText, Camera, Loader
+} from 'lucide-react';
 
-const AddProduct = () => {
+const EditProduct = () => {
+  const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { selectedProduct, loading } = useSelector((state) => state.products);
   const { categories } = useSelector((state) => state.categories);
   const { userInfo } = useSelector((state) => state.auth);
   
-  const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [imagePreviews, setImagePreviews] = useState([]);
-  const [imageFiles, setImageFiles] = useState([]);
-
+  const [newImageFiles, setNewImageFiles] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [removedImages, setRemovedImages] = useState([]);
+  
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -26,9 +37,31 @@ const AddProduct = () => {
   const [specKey, setSpecKey] = useState('');
   const [specValue, setSpecValue] = useState('');
 
+  // Fetch product and categories on mount
   useEffect(() => {
-    dispatch(fetchCategories());
-  }, [dispatch]);
+    const fetchData = async () => {
+      await dispatch(fetchProductById(id));
+      await dispatch(fetchCategories());
+      setPageLoading(false);
+    };
+    fetchData();
+  }, [dispatch, id]);
+
+  // Populate form when product is loaded
+  useEffect(() => {
+    if (selectedProduct && !pageLoading) {
+      setFormData({
+        name: selectedProduct.name || '',
+        description: selectedProduct.description || '',
+        price: selectedProduct.price || '',
+        category: selectedProduct.category?._id || selectedProduct.category || '',
+        stock: selectedProduct.stock || '',
+        specifications: selectedProduct.specifications || {}
+      });
+      setExistingImages(selectedProduct.images || []);
+      setImagePreviews(selectedProduct.images || []);
+    }
+  }, [selectedProduct, pageLoading]);
 
   const handleChange = (e) => {
     setFormData({
@@ -37,11 +70,11 @@ const AddProduct = () => {
     });
   };
 
-  // Handle image file selection
+  // Handle new image selection
   const handleImageSelect = (e) => {
     const files = Array.from(e.target.files);
     
-    if (files.length + imageFiles.length > 10) {
+    if (files.length + existingImages.length + newImageFiles.length > 10) {
       toast.error('Maximum 10 images allowed');
       return;
     }
@@ -50,7 +83,7 @@ const AddProduct = () => {
     const invalidFiles = files.filter(file => {
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       const isValidType = validTypes.includes(file.type);
-      const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB
+      const isValidSize = file.size <= 5 * 1024 * 1024;
       return !isValidType || !isValidSize;
     });
     
@@ -62,16 +95,37 @@ const AddProduct = () => {
     // Create preview URLs
     const newPreviews = files.map(file => URL.createObjectURL(file));
     setImagePreviews([...imagePreviews, ...newPreviews]);
-    setImageFiles([...imageFiles, ...files]);
+    setNewImageFiles([...newImageFiles, ...files]);
   };
 
-  // Remove image
-  const removeImage = (index) => {
+  // Remove existing image
+  const removeExistingImage = (index) => {
+    const removed = existingImages[index];
+    setRemovedImages([...removedImages, removed]);
+    const newExisting = existingImages.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    setExistingImages(newExisting);
+    setImagePreviews(newPreviews);
+  };
+
+  // Remove new image
+  const removeNewImage = (index) => {
+    const offset = existingImages.length;
+    const actualIndex = index - offset;
     URL.revokeObjectURL(imagePreviews[index]);
     const newPreviews = imagePreviews.filter((_, i) => i !== index);
-    const newFiles = imageFiles.filter((_, i) => i !== index);
+    const newFiles = newImageFiles.filter((_, i) => i !== actualIndex);
     setImagePreviews(newPreviews);
-    setImageFiles(newFiles);
+    setNewImageFiles(newFiles);
+  };
+
+  const removeImage = (index) => {
+    if (index < existingImages.length) {
+      removeExistingImage(index);
+    } else {
+      removeNewImage(index);
+    }
+    toast.success('Image removed');
   };
 
   const addSpecification = () => {
@@ -102,22 +156,6 @@ const AddProduct = () => {
     toast.success('Specification removed');
   };
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      price: '',
-      category: '',
-      stock: '',
-      specifications: {}
-    });
-    setSpecKey('');
-    setSpecValue('');
-    imagePreviews.forEach(preview => URL.revokeObjectURL(preview));
-    setImagePreviews([]);
-    setImageFiles([]);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -125,26 +163,31 @@ const AddProduct = () => {
       return toast.error('Please fill all required fields');
     }
 
-    if (imageFiles.length === 0) {
-      return toast.error('Please select at least one product image');
+    if (imagePreviews.length === 0) {
+      return toast.error('Please add at least one product image');
     }
 
-    setLoading(true);
+    setSubmitting(true);
 
     const submitData = new FormData();
+    
+    // Append product data as JSON
     submitData.append('productData', JSON.stringify({
       ...formData,
       price: Number(formData.price),
-      stock: Number(formData.stock || 0)
+      stock: Number(formData.stock || 0),
+      existingImages: existingImages,
+      removedImages: removedImages
     }));
     
-    imageFiles.forEach(file => {
+    // Append new images
+    newImageFiles.forEach(file => {
       submitData.append('images', file);
     });
 
     try {
-      const response = await fetch('http://localhost:5000/api/products', {
-        method: 'POST',
+      const response = await fetch(`http://localhost:5000/api/products/${id}`, {
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${userInfo?.token}`
         },
@@ -152,52 +195,68 @@ const AddProduct = () => {
       });
 
       if (response.ok) {
-        toast.success('Product added successfully!');
-        resetForm();
+        toast.success('Product updated successfully!');
         setTimeout(() => {
           navigate('/admin/products/manage');
         }, 1500);
       } else {
         const error = await response.json();
-        toast.error(error.message || 'Failed to add product');
+        toast.error(error.message || 'Failed to update product');
       }
     } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Something went wrong with image upload');
+      console.error('Update error:', error);
+      toast.error('Something went wrong');
     }
 
-    setLoading(false);
+    setSubmitting(false);
   };
+
+  if (pageLoading || loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading product details...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header Section */}
+        {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Add New Product</h1>
-              <p className="text-sm text-gray-500 mt-1">Create and manage your product inventory</p>
+              <div className="flex items-center gap-3 mb-2">
+                <Link
+                  to="/admin/products/manage"
+                  className="p-2 bg-white rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+                >
+                  <ArrowLeft className="h-5 w-5 text-gray-600" />
+                </Link>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Edit Product</h1>
+              </div>
+              <p className="text-sm text-gray-500 ml-12">Update product information and images</p>
             </div>
-            <button
-              type="button"
-              onClick={() => navigate('/admin/products/manage')}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to Products
-            </button>
+            <div className="flex gap-3">
+              <Link
+                to={`/products/${id}`}
+                target="_blank"
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+              >
+                View Product
+              </Link>
+            </div>
           </div>
         </div>
 
         {/* Main Form */}
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* Form Header */}
           <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 bg-gray-50/50">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900">Product Information</h2>
-            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Fill in the details below to add a new product</p>
+            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Update the details below to modify your product</p>
           </div>
 
           <div className="p-4 sm:p-6">
@@ -273,6 +332,26 @@ const AddProduct = () => {
                   </div>
                 </div>
 
+                {/* Stock Status Badge */}
+                <div className="flex items-center gap-2">
+                  {formData.stock > 10 ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700">
+                      <CheckCircle className="h-3 w-3" />
+                      In Stock ({formData.stock} units)
+                    </span>
+                  ) : formData.stock > 0 ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 text-amber-700">
+                      <AlertCircle className="h-3 w-3" />
+                      Low Stock ({formData.stock} units)
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-red-50 text-red-700">
+                      <AlertCircle className="h-3 w-3" />
+                      Out of Stock
+                    </span>
+                  )}
+                </div>
+
                 {/* Description */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -300,12 +379,10 @@ const AddProduct = () => {
                   {/* Upload Area */}
                   <div className="mt-1 flex justify-center px-4 sm:px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors bg-gray-50/30">
                     <div className="space-y-2 text-center">
-                      <svg className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                      <Camera className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
                       <div className="flex flex-col sm:flex-row text-sm text-gray-600">
                         <label htmlFor="image-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none">
-                          <span>Upload images</span>
+                          <span>Upload new images</span>
                           <input
                             id="image-upload"
                             name="image-upload"
@@ -319,35 +396,40 @@ const AddProduct = () => {
                         <p className="pl-0 sm:pl-1 mt-1 sm:mt-0">or drag and drop</p>
                       </div>
                       <p className="text-xs text-gray-500">
-                        PNG, JPG, JPEG, WEBP up to 5MB each (max 10 images)
+                        PNG, JPG, JPEG, WEBP up to 5MB each (max 10 images total)
                       </p>
                     </div>
                   </div>
 
-                  {/* Image Previews Grid */}
+                  {/* Images Grid */}
                   {imagePreviews.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-4">
-                      {imagePreviews.map((preview, idx) => (
-                        <div key={idx} className="relative group aspect-square">
-                          <img 
-                            src={preview} 
-                            alt={`Preview ${idx + 1}`} 
-                            className="w-full h-full object-cover rounded-lg border border-gray-200 shadow-sm"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(idx)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"
-                          >
-                            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs text-center py-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                            Image {idx + 1}
+                    <div className="mt-4">
+                      <p className="text-sm font-medium text-gray-700 mb-3">
+                        {imagePreviews.length} image(s) - Click X to remove
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {imagePreviews.map((preview, idx) => (
+                          <div key={idx} className="relative group aspect-square">
+                            <img 
+                              src={preview} 
+                              alt={`Product ${idx + 1}`} 
+                              className="w-full h-full object-cover rounded-lg border border-gray-200 shadow-sm"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(idx)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"
+                            >
+                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                            </button>
+                            {idx < existingImages.length && (
+                              <div className="absolute bottom-0 left-0 right-0 bg-blue-600 text-white text-xs text-center py-1 rounded-b-lg">
+                                Existing
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
                   
@@ -383,6 +465,7 @@ const AddProduct = () => {
                       onClick={addSpecification} 
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium text-sm sm:text-base whitespace-nowrap"
                     >
+                      <Plus className="h-4 w-4 inline-block mr-1" />
                       Add
                     </button>
                   </div>
@@ -416,40 +499,58 @@ const AddProduct = () => {
             </div>
           </div>
 
-          {/* Form Actions - Sticky on Mobile */}
+          {/* Form Actions */}
           <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200">
             <div className="flex flex-col-reverse sm:flex-row gap-3">
               <button
                 type="submit"
-                disabled={loading}
+                disabled={submitting}
                 className="w-full sm:w-auto order-2 sm:order-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
               >
-                {loading ? (
+                {submitting ? (
                   <>
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Adding Product...
+                    <Loader className="h-5 w-5 animate-spin" />
+                    Updating Product...
                   </>
                 ) : (
-                  'Add Product'
+                  <>
+                    <Save className="h-5 w-5" />
+                    Update Product
+                  </>
                 )}
               </button>
               
               <button
                 type="button"
-                onClick={resetForm}
+                onClick={() => navigate('/admin/products/manage')}
                 className="w-full sm:w-auto order-1 sm:order-2 px-6 py-2.5 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors text-sm sm:text-base"
               >
-                Reset Form
+                Cancel
               </button>
             </div>
           </div>
         </form>
+
+        {/* Info Box */}
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <Package className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-blue-900 mb-1">Product Update Tips</h4>
+              <p className="text-xs text-blue-700">
+                • High-quality images help increase sales. Add clear product photos.<br />
+                • Keep product descriptions detailed and accurate.<br />
+                • Update stock levels regularly to avoid overselling.<br />
+                • Adding specifications helps customers make informed decisions.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-export default AddProduct;
+export default EditProduct;

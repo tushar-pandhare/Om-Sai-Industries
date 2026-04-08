@@ -33,6 +33,7 @@ import ContactEditor from './pages/admin/ContactEditor';
 import Users from './pages/admin/Users';
 import AdminMessages from './pages/admin/AdminMessages';
 import ManageOrderUserSide from './pages/user/ManageOrderUserSide';
+import EditProduct from './pages/admin/EditProduct';
 
 function App() {
   const { userInfo } = useSelector((state) => state.auth);
@@ -63,6 +64,7 @@ function App() {
         <Route path="/admin" element={userInfo?.role === 'admin' ? <Dashboard /> : <Navigate to="/" />} />
         <Route path="/admin/products/add" element={userInfo?.role === 'admin' ? <AddProduct /> : <Navigate to="/" />} />
         <Route path="/admin/products/manage" element={userInfo?.role === 'admin' ? <ManageProducts /> : <Navigate to="/" />} />
+        <Route path="/admin/products/edit/:id" element={userInfo?.role === 'admin' ? <EditProduct /> : <Navigate to="/" />} />
         <Route path="/admin/categories" element={userInfo?.role === 'admin' ? <Categories /> : <Navigate to="/" />} />
         <Route path="/admin/offers" element={userInfo?.role === 'admin' ? <OffersManagement /> : <Navigate to="/" />} />
         <Route path="/admin/reviews" element={userInfo?.role === 'admin' ? <Reviews /> : <Navigate to="/" />} />
