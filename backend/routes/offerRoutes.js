@@ -206,6 +206,7 @@ router.delete('/:id', protect, adminMiddleware, async (req, res) => {
 });
 
 module.exports = router;
+
 // const express = require('express');
 // const router = express.Router();
 // const Offer = require('../models/Offer');

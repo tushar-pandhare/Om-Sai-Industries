@@ -1,4 +1,3 @@
-// backend/controllers/productController.js
 const Product = require('../models/Product');
 const Offer = require('../models/Offer');
 
@@ -194,6 +193,7 @@ module.exports = {
   updateProduct, 
   deleteProduct
 };
+
 // // backend/controllers/productController.js
 // const Product = require('../models/Product');
 // const getProducts = async (req, res) => {
