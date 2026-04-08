@@ -36,3 +36,10 @@ Thumbs.db
 
 
 pkg.json.txt
+
+backend/middleware/authMiddleware.js
+backend/middleware/authMiddleware.js
+backend/middleware/upload.js
+
+backeend/config/db.js
+backeend/config/cloudinary.js

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const upload = require('../middleware/upload');
 const {
   getCategories,
   getCategoryById,
@@ -14,9 +15,9 @@ const { adminMiddleware } = require('../middleware/adminMiddleware');
 router.get('/', getCategories);
 router.get('/:id', getCategoryById);
 
-// Admin only routes - Note: no /admin prefix here because it's already mounted on /api/categories
-router.post('/', protect, adminMiddleware, createCategory);
-router.put('/:id', protect, adminMiddleware, updateCategory);
+// Admin only routes with image upload support
+router.post('/', protect, adminMiddleware, upload.single('image'), createCategory);
+router.put('/:id', protect, adminMiddleware, upload.single('image'), updateCategory);
 router.delete('/:id', protect, adminMiddleware, deleteCategory);
 
 module.exports = router;
