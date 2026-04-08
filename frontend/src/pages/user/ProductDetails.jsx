@@ -317,7 +317,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchProductById, fetchProductReviews, clearReviewSubmitStatus } from '../../features/prdoducts/productSlice';
 import { addToCart } from '../../features/cart/cartSlice';
 import FeedbackForm from '../../components/FeedbackForm';
-import { FaStar, FaStarHalfAlt, FaRegStar, FaShoppingCart, FaBolt, FaTruck, FaUndo, FaShieldAlt, FaShare, FaHeart, FaChevronLeft, FaChevronRight, FaUser, FaCalendar, FaCheckCircle } from 'react-icons/fa';
+import { FaStar, FaStarHalfAlt, FaRegStar, FaShoppingCart, FaBolt, FaTruck, FaUndo, FaShieldAlt, FaShare, FaChevronLeft, FaChevronRight, FaUser, FaCalendar, FaCheckCircle } from 'react-icons/fa';
 import { MdVerified } from 'react-icons/md';
 import toast from 'react-hot-toast';
 
@@ -329,7 +329,6 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
   const [mainImage, setMainImage] = useState(0);
-  const [isWishlisted, setIsWishlisted] = useState(false);
 
   useEffect(() => {
     dispatch(fetchProductById(id));
@@ -393,14 +392,6 @@ const ProductDetails = () => {
     toast.success('Product link copied to clipboard!', {
       icon: '📋',
       duration: 2000,
-    });
-  };
-
-  const handleWishlist = () => {
-    setIsWishlisted(!isWishlisted);
-    toast.success(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist', {
-      icon: isWishlisted ? '💔' : '❤️',
-      duration: 1500,
     });
   };
 
@@ -523,15 +514,6 @@ const ProductDetails = () => {
                     title="Share product"
                   >
                     <FaShare className="w-4 h-4 text-gray-600" />
-                  </button>
-                  <button
-                    onClick={handleWishlist}
-                    className={`p-2 rounded-full transition-all duration-300 hover:scale-110 ${
-                      isWishlisted ? 'bg-red-100 text-red-500' : 'bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-500'
-                    }`}
-                    title="Add to wishlist"
-                  >
-                    <FaHeart className={`w-4 h-4 ${isWishlisted ? 'fill-current' : ''}`} />
                   </button>
                 </div>
               </div>
@@ -676,8 +658,8 @@ const ProductDetails = () => {
                             <tr key={key} className={`${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} border-b border-gray-100`}>
                               <td className="py-2 md:py-3 px-3 md:px-4 font-semibold text-gray-700 w-1/3 text-sm md:text-base">{key}</td>
                               <td className="py-2 md:py-3 px-3 md:px-4 text-gray-600 text-sm md:text-base">{value}</td>
-                            </tr>
-                          ))}
+                            </tr>)
+                          )}
                         </tbody>
                       </table>
                     </div>

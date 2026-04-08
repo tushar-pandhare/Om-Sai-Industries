@@ -15,14 +15,18 @@
 const express = require('express');
 const router = express.Router();
 const {
+  createReview,
+  getProductReviews,
   getAllReviews,
   deleteReview
 } = require('../controllers/reviewController');
 const { protect } = require('../middleware/authMiddleware');
 const { adminMiddleware } = require('../middleware/adminMiddleware');
 
-// Admin routes - Note: These are mounted at /api/reviews in server.js
-// So full path becomes /api/reviews for GET and DELETE
+// Public routes - This is the missing endpoint!
+router.get('/product/:productId', getProductReviews);  // ✅ Add this line
+
+// Admin routes
 router.get('/', protect, adminMiddleware, getAllReviews);
 router.delete('/:id', protect, adminMiddleware, deleteReview);
 

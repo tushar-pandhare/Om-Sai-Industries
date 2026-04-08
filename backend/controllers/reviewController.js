@@ -134,10 +134,10 @@ const createReview = async (req, res) => {
     }
     
     // Check if user already reviewed this product
-    // const alreadyReviewed = await Review.findOne({ user: userId, product: productId });
-    // if (alreadyReviewed) {
-    //   return res.status(400).json({ message: 'Product already reviewed' });
-    // }
+    const alreadyReviewed = await Review.findOne({ user: userId, product: productId });
+    if (alreadyReviewed) {
+      return res.status(400).json({ message: 'You have already reviewed this product' });
+    }
     
     // Create review in Review collection
     const review = new Review({
@@ -149,24 +149,25 @@ const createReview = async (req, res) => {
     
     const savedReview = await review.save();
     
-    // ALSO add to product's embedded reviews for backward compatibility
-    const embeddedReview = {
-      user: userId,
-      rating: Number(rating),
-      comment,
-      createdAt: new Date()
-    };
+    // Update product rating
+    const allReviews = await Review.find({ product: productId });
+    const totalRating = allReviews.reduce((sum, rev) => sum + rev.rating, 0);
+    const averageRating = totalRating / allReviews.length;
     
-    product.reviews = product.reviews || [];
-    product.reviews.push(embeddedReview);
-    product.numReviews = product.reviews.length;
-    product.rating = product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length;
+    product.rating = averageRating;
+    product.numReviews = allReviews.length;
     await product.save();
+    
+    // Populate user info
+    await savedReview.populate('user', 'name email');
     
     console.log('Review saved:', savedReview);
     res.status(201).json({ 
+      success: true,
       message: 'Review added successfully', 
-      review: savedReview 
+      review: savedReview,
+      productRating: averageRating,
+      numReviews: allReviews.length
     });
   } catch (error) {
     console.error('Error creating review:', error);
@@ -174,20 +175,44 @@ const createReview = async (req, res) => {
   }
 };
 
+// ✅ This is the endpoint your frontend is calling
 const getProductReviews = async (req, res) => {
   try {
-    const productId = req.params.productId;
+    const { productId } = req.params;
+    
+    console.log('Fetching reviews for product:', productId);
+    
+    // Get reviews from Review collection
     const reviews = await Review.find({ product: productId })
       .populate('user', 'name email')
       .sort({ createdAt: -1 });
     
-    res.json(reviews);
+    // Get product details for rating summary
+    const product = await Product.findById(productId);
+    
+    // Calculate rating distribution
+    const ratingDistribution = {
+      5: reviews.filter(r => r.rating === 5).length,
+      4: reviews.filter(r => r.rating === 4).length,
+      3: reviews.filter(r => r.rating === 3).length,
+      2: reviews.filter(r => r.rating === 2).length,
+      1: reviews.filter(r => r.rating === 1).length
+    };
+    
+    res.json({
+      success: true,
+      reviews,
+      averageRating: product?.rating || 0,
+      totalReviews: reviews.length,
+      ratingDistribution
+    });
   } catch (error) {
+    console.error('Error fetching product reviews:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// MODIFIED: Get all reviews from ALL sources
+// Get all reviews from ALL sources (Admin only)
 const getAllReviews = async (req, res) => {
   try {
     // 1. Get reviews from Review collection
@@ -224,7 +249,7 @@ const getAllReviews = async (req, res) => {
             _id: `${product._id}_${review.createdAt || Date.now()}`,
             type: 'product-review',
             source: 'embedded',
-            userName: 'Legacy User',
+            userName: review.user?.name || 'Legacy User',
             userEmail: 'No email',
             rating: review.rating,
             comment: review.comment,
@@ -264,7 +289,7 @@ const getAllReviews = async (req, res) => {
     // Sort by creation date (newest first)
     allReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     
-    console.log(`Total combined reviews: ${allReviews.length} (${formattedReviewReviews.length} from review collection, ${embeddedReviews.length} embedded, ${formattedFeedbacks.length} feedback)`);
+    console.log(`Total combined reviews: ${allReviews.length}`);
     
     res.json(allReviews);
   } catch (error) {
@@ -299,7 +324,7 @@ const deleteReview = async (req, res) => {
         await product.save();
       }
       
-      return res.json({ message: 'Review removed successfully from review collection' });
+      return res.json({ message: 'Review removed successfully' });
     }
     
     // If not found in Review collection, try to delete from Feedback collection
@@ -307,21 +332,6 @@ const deleteReview = async (req, res) => {
     if (feedback) {
       await feedback.deleteOne();
       return res.json({ message: 'Feedback removed successfully' });
-    }
-    
-    // If not found in either, try to delete embedded review
-    const products = await Product.find({ 'reviews._id': reviewId });
-    if (products.length > 0) {
-      const product = products[0];
-      product.reviews = product.reviews.filter(r => r._id.toString() !== reviewId);
-      product.numReviews = product.reviews.length;
-      if (product.reviews.length > 0) {
-        product.rating = product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length;
-      } else {
-        product.rating = 0;
-      }
-      await product.save();
-      return res.json({ message: 'Embedded review removed successfully' });
     }
     
     res.status(404).json({ message: 'Review/Feedback not found' });
@@ -333,7 +343,7 @@ const deleteReview = async (req, res) => {
 
 module.exports = { 
   createReview, 
+  getProductReviews,  // ✅ Make sure this is exported
   getAllReviews, 
-  deleteReview,
-  getProductReviews
+  deleteReview
 };
