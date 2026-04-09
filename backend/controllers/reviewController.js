@@ -19,10 +19,10 @@ const createReview = async (req, res) => {
     }
     
     // Check if user already reviewed this product
-    const alreadyReviewed = await Review.findOne({ user: userId, product: productId });
-    if (alreadyReviewed) {
-      return res.status(400).json({ message: 'You have already reviewed this product' });
-    }
+    // const alreadyReviewed = await Review.findOne({ user: userId, product: productId });
+    // if (alreadyReviewed) {
+    //   return res.status(400).json({ message: 'You have already reviewed this product' });
+    // }
     
     // Create review in Review collection
     const review = new Review({

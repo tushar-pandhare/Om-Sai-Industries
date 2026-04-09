@@ -39,120 +39,88 @@ const FeedbackForm = ({ productId, isGeneralFeedback = false }) => {
       return () => clearTimeout(timer);
     }
   }, [submitSuccess]);
+    // frontend/src/components/FeedbackForm.jsx
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setTouched({ rating: true, comment: true });
-    
-    if (!isAuthenticated) {
-      toast.error('Please login to submit feedback', {
-        duration: 3000,
-        icon: '🔒',
-        style: {
-          background: '#FEE2E2',
-          color: '#991B1B',
-          borderRadius: '12px',
-        },
-      });
-      return;
-    }
-    
-    if (rating === 0) {
-      toast.error('Please select a rating', {
-        duration: 3000,
-        icon: '⭐',
-        style: {
-          background: '#FEE2E2',
-          color: '#991B1B',
-          borderRadius: '12px',
-        },
-      });
-      return;
-    }
-    
-    if (!comment.trim()) {
-      toast.error('Please write your feedback', {
-        duration: 3000,
-        icon: '📝',
-        style: {
-          background: '#FEE2E2',
-          color: '#991B1B',
-          borderRadius: '12px',
-        },
-      });
-      return;
-    }
-    
-    setIsSubmitting(true);
-    const loadingToast = toast.loading('Submitting your feedback...');
-    
-    try {
-      if (!isGeneralFeedback && productId) {
-        await dispatch(createReview({ 
-          productId: productId,
-          rating: rating,
-          comment: comment
-        })).unwrap();
-        
-        toast.dismiss(loadingToast);
-        toast.success(
-          (t) => (
-            <div className="flex items-center gap-3">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <FaCheckCircle className="w-5 h-5 text-green-600" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-800">Review Submitted! 🎉</p>
-                <p className="text-sm text-gray-600">Thank you for sharing your experience</p>
+// Update the handleSubmit function to handle duplicate review error
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setTouched({ rating: true, comment: true });
+  
+  if (!isAuthenticated) {
+    toast.error('Please login to submit feedback', {
+      duration: 3000,
+      icon: '🔒',
+      style: {
+        background: '#FEE2E2',
+        color: '#991B1B',
+        borderRadius: '12px',
+      },
+    });
+    return;
+  }
+  
+  if (rating === 0) {
+    toast.error('Please select a rating', {
+      duration: 3000,
+      icon: '⭐',
+      style: {
+        background: '#FEE2E2',
+        color: '#991B1B',
+        borderRadius: '12px',
+      },
+    });
+    return;
+  }
+  
+  if (!comment.trim()) {
+    toast.error('Please write your feedback', {
+      duration: 3000,
+      icon: '📝',
+      style: {
+        background: '#FEE2E2',
+        color: '#991B1B',
+        borderRadius: '12px',
+      },
+    });
+    return;
+  }
+  
+  setIsSubmitting(true);
+  const loadingToast = toast.loading('Submitting your feedback...');
+  
+  try {
+    if (!isGeneralFeedback && productId) {
+      await dispatch(createReview({ 
+        productId: productId,
+        rating: rating,
+        comment: comment
+      })).unwrap();
+      
+      toast.dismiss(loadingToast);
+      toast.success(
+        (t) => (
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <FaCheckCircle className="w-5 h-5 text-green-600" />
               </div>
             </div>
-          ),
-          {
-            duration: 4000,
-            style: {
-              background: '#F0FDF4',
-              borderRadius: '12px',
-              padding: '12px',
-              border: '1px solid #86EFAC',
-            },
-          }
-        );
-      } else {
-        await dispatch(submitFeedback({ 
-          rating: rating,
-          comment: comment,
-          userName: currentUser.name,
-          userEmail: currentUser.email
-        })).unwrap();
-        
-        toast.dismiss(loadingToast);
-        toast.success(
-          (t) => (
-            <div className="flex items-center gap-3">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <FaCheckCircle className="w-5 h-5 text-green-600" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-800">Feedback Sent! 🙏</p>
-                <p className="text-sm text-gray-600">We appreciate your input</p>
-              </div>
+            <div className="flex-1">
+              <p className="font-semibold text-gray-800">Review Submitted! 🎉</p>
+              <p className="text-sm text-gray-600">Thank you for sharing your experience</p>
             </div>
-          ),
-          {
-            duration: 4000,
-            style: {
-              background: '#F0FDF4',
-              borderRadius: '12px',
-              padding: '12px',
-              border: '1px solid #86EFAC',
-            },
-          }
-        );
-      }
+          </div>
+        ),
+        {
+          duration: 4000,
+          style: {
+            background: '#F0FDF4',
+            borderRadius: '12px',
+            padding: '12px',
+            border: '1px solid #86EFAC',
+          },
+        }
+      );
       
       // Reset form after successful submission
       setRating(0);
@@ -160,8 +128,81 @@ const FeedbackForm = ({ productId, isGeneralFeedback = false }) => {
       setTouched({ rating: false, comment: false });
       setSubmitSuccess(true);
       
-    } catch (error) {
+    } else {
+      await dispatch(submitFeedback({ 
+        rating: rating,
+        comment: comment,
+        userName: currentUser.name,
+        userEmail: currentUser.email
+      })).unwrap();
+      
       toast.dismiss(loadingToast);
+      toast.success(
+        (t) => (
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <FaCheckCircle className="w-5 h-5 text-green-600" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-gray-800">Feedback Sent! 🙏</p>
+              <p className="text-sm text-gray-600">We appreciate your input</p>
+            </div>
+          </div>
+        ),
+        {
+          duration: 4000,
+          style: {
+            background: '#F0FDF4',
+            borderRadius: '12px',
+            padding: '12px',
+            border: '1px solid #86EFAC',
+          },
+        }
+      );
+      
+      // Reset form after successful submission
+      setRating(0);
+      setComment('');
+      setTouched({ rating: false, comment: false });
+      setSubmitSuccess(true);
+    }
+    
+  } catch (error) {
+    toast.dismiss(loadingToast);
+    
+    // ✅ Check for duplicate review error (400 with specific message)
+    const errorMessage = error.message || error.response?.data?.message || 'Please try again later';
+    
+    if (errorMessage.includes('already reviewed')) {
+      // Special toast for duplicate review
+      toast.error(
+        (t) => (
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                <FaExclamationCircle className="w-5 h-5 text-amber-600" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-gray-800">Already Reviewed! ⚠️</p>
+              <p className="text-sm text-gray-600">You have already submitted a review for this product</p>
+            </div>
+          </div>
+        ),
+        {
+          duration: 5000,
+          style: {
+            background: '#FFFBEB',
+            borderRadius: '12px',
+            padding: '12px',
+            border: '1px solid #FCD34D',
+          },
+        }
+      );
+    } else {
+      // Generic error toast
       toast.error(
         (t) => (
           <div className="flex items-center gap-3">
@@ -172,7 +213,7 @@ const FeedbackForm = ({ productId, isGeneralFeedback = false }) => {
             </div>
             <div className="flex-1">
               <p className="font-semibold text-gray-800">Submission Failed</p>
-              <p className="text-sm text-gray-600">{error.message || 'Please try again later'}</p>
+              <p className="text-sm text-gray-600">{errorMessage}</p>
             </div>
           </div>
         ),
@@ -186,10 +227,161 @@ const FeedbackForm = ({ productId, isGeneralFeedback = false }) => {
           },
         }
       );
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setTouched({ rating: true, comment: true });
+    
+  //   if (!isAuthenticated) {
+  //     toast.error('Please login to submit feedback', {
+  //       duration: 3000,
+  //       icon: '🔒',
+  //       style: {
+  //         background: '#FEE2E2',
+  //         color: '#991B1B',
+  //         borderRadius: '12px',
+  //       },
+  //     });
+  //     return;
+  //   }
+    
+  //   if (rating === 0) {
+  //     toast.error('Please select a rating', {
+  //       duration: 3000,
+  //       icon: '⭐',
+  //       style: {
+  //         background: '#FEE2E2',
+  //         color: '#991B1B',
+  //         borderRadius: '12px',
+  //       },
+  //     });
+  //     return;
+  //   }
+    
+  //   if (!comment.trim()) {
+  //     toast.error('Please write your feedback', {
+  //       duration: 3000,
+  //       icon: '📝',
+  //       style: {
+  //         background: '#FEE2E2',
+  //         color: '#991B1B',
+  //         borderRadius: '12px',
+  //       },
+  //     });
+  //     return;
+  //   }
+    
+  //   setIsSubmitting(true);
+  //   const loadingToast = toast.loading('Submitting your feedback...');
+    
+  //   try {
+  //     if (!isGeneralFeedback && productId) {
+  //       await dispatch(createReview({ 
+  //         productId: productId,
+  //         rating: rating,
+  //         comment: comment
+  //       })).unwrap();
+        
+  //       toast.dismiss(loadingToast);
+  //       toast.success(
+  //         (t) => (
+  //           <div className="flex items-center gap-3">
+  //             <div className="flex-shrink-0">
+  //               <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+  //                 <FaCheckCircle className="w-5 h-5 text-green-600" />
+  //               </div>
+  //             </div>
+  //             <div className="flex-1">
+  //               <p className="font-semibold text-gray-800">Review Submitted! 🎉</p>
+  //               <p className="text-sm text-gray-600">Thank you for sharing your experience</p>
+  //             </div>
+  //           </div>
+  //         ),
+  //         {
+  //           duration: 4000,
+  //           style: {
+  //             background: '#F0FDF4',
+  //             borderRadius: '12px',
+  //             padding: '12px',
+  //             border: '1px solid #86EFAC',
+  //           },
+  //         }
+  //       );
+  //     } else {
+  //       await dispatch(submitFeedback({ 
+  //         rating: rating,
+  //         comment: comment,
+  //         userName: currentUser.name,
+  //         userEmail: currentUser.email
+  //       })).unwrap();
+        
+  //       toast.dismiss(loadingToast);
+  //       toast.success(
+  //         (t) => (
+  //           <div className="flex items-center gap-3">
+  //             <div className="flex-shrink-0">
+  //               <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+  //                 <FaCheckCircle className="w-5 h-5 text-green-600" />
+  //               </div>
+  //             </div>
+  //             <div className="flex-1">
+  //               <p className="font-semibold text-gray-800">Feedback Sent! 🙏</p>
+  //               <p className="text-sm text-gray-600">We appreciate your input</p>
+  //             </div>
+  //           </div>
+  //         ),
+  //         {
+  //           duration: 4000,
+  //           style: {
+  //             background: '#F0FDF4',
+  //             borderRadius: '12px',
+  //             padding: '12px',
+  //             border: '1px solid #86EFAC',
+  //           },
+  //         }
+  //       );
+  //     }
+      
+  //     // Reset form after successful submission
+  //     setRating(0);
+  //     setComment('');
+  //     setTouched({ rating: false, comment: false });
+  //     setSubmitSuccess(true);
+      
+  //   } catch (error) {
+  //     toast.dismiss(loadingToast);
+  //     toast.error(
+  //       (t) => (
+  //         <div className="flex items-center gap-3">
+  //           <div className="flex-shrink-0">
+  //             <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+  //               <FaExclamationCircle className="w-5 h-5 text-red-600" />
+  //             </div>
+  //           </div>
+  //           <div className="flex-1">
+  //             <p className="font-semibold text-gray-800">Submission Failed</p>
+  //             <p className="text-sm text-gray-600">{error.message || 'Please try again later'}</p>
+  //           </div>
+  //         </div>
+  //       ),
+  //       {
+  //         duration: 4000,
+  //         style: {
+  //           background: '#FEF2F2',
+  //           borderRadius: '12px',
+  //           padding: '12px',
+  //           border: '1px solid #FCA5A5',
+  //         },
+  //       }
+  //     );
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
 
   const renderStars = () => {
     return (
