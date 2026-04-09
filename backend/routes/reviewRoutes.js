@@ -23,9 +23,8 @@ const {
 const { protect } = require('../middleware/authMiddleware');
 const { adminMiddleware } = require('../middleware/adminMiddleware');
 
-// Public routes - This is the missing endpoint!
-router.get('/product/:productId', getProductReviews);  // ✅ Add this line
-
+router.post('/product/:productId', protect, createReview); 
+router.get('/product/:productId', getProductReviews);  
 // Admin routes
 router.get('/', protect, adminMiddleware, getAllReviews);
 router.delete('/:id', protect, adminMiddleware, deleteReview);

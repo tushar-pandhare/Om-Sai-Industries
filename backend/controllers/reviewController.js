@@ -1,119 +1,3 @@
-// const Review = require('../models/Review');
-// const Product = require('../models/Product');
-
-// const createReview = async (req, res) => {
-//   try {
-//     const { rating, comment } = req.body;
-//     const productId = req.params.id; // Get product ID from URL params
-//     const userId = req.user._id;
-    
-//     console.log('Creating review:', { productId, userId, rating, comment });
-    
-//     // Check if product exists
-//     const product = await Product.findById(productId);
-//     if (!product) {
-//       return res.status(404).json({ message: 'Product not found' });
-//     }
-    
-//     // Check if user already reviewed this product
-//     const alreadyReviewed = await Review.findOne({ user: userId, product: productId });
-//     if (alreadyReviewed) {
-//       return res.status(400).json({ message: 'Product already reviewed' });
-//     }
-    
-//     // Create review
-//     const review = new Review({
-//       user: userId,
-//       product: productId,
-//       rating: Number(rating),
-//       comment
-//     });
-    
-//     const savedReview = await review.save();
-    
-//     // Update product rating and review count
-//     const allReviews = await Review.find({ product: productId });
-//     const totalRating = allReviews.reduce((sum, rev) => sum + rev.rating, 0);
-//     product.rating = totalRating / allReviews.length;
-//     product.numReviews = allReviews.length;
-//     await product.save();
-    
-//     console.log('Review saved:', savedReview);
-//     res.status(201).json({ 
-//       message: 'Review added successfully', 
-//       review: savedReview 
-//     });
-//   } catch (error) {
-//     console.error('Error creating review:', error);
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-// const getProductReviews = async (req, res) => {
-//   try {
-//     const productId = req.params.productId;
-//     const reviews = await Review.find({ product: productId })
-//       .populate('user', 'name email')
-//       .sort({ createdAt: -1 });
-    
-//     res.json(reviews);
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-// const getAllReviews = async (req, res) => {
-//   try {
-//     const reviews = await Review.find({})
-//       .populate('user', 'name email')
-//       .populate('product', 'name')
-//       .sort({ createdAt: -1 });
-//     res.json(reviews);
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-// const deleteReview = async (req, res) => {
-//   try {
-//     const review = await Review.findById(req.params.id);
-//     if (!review) {
-//       return res.status(404).json({ message: 'Review not found' });
-//     }
-    
-//     const productId = review.product;
-//     await review.deleteOne();
-    
-//     // Update product rating after deletion
-//     const allReviews = await Review.find({ product: productId });
-//     const product = await Product.findById(productId);
-    
-//     if (product) {
-//       if (allReviews.length > 0) {
-//         const totalRating = allReviews.reduce((sum, rev) => sum + rev.rating, 0);
-//         product.rating = totalRating / allReviews.length;
-//         product.numReviews = allReviews.length;
-//       } else {
-//         product.rating = 0;
-//         product.numReviews = 0;
-//       }
-//       await product.save();
-//     }
-    
-//     res.json({ message: 'Review removed successfully' });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-// module.exports = { 
-//   createReview, 
-//   getAllReviews, 
-//   deleteReview,
-//   getProductReviews  // Add this new function
-// };
-
-// backend/controllers/reviewController.js
 // backend/controllers/reviewController.js
 const Review = require('../models/Review');
 const Product = require('../models/Product');
@@ -122,8 +6,9 @@ const Feedback = require('../models/Feedback');
 const createReview = async (req, res) => {
   try {
     const { rating, comment } = req.body;
-    const productId = req.params.id;
+    const productId = req.params.productId; 
     const userId = req.user._id;
+    // console.log
     
     console.log('Creating review:', { productId, userId, rating, comment });
     

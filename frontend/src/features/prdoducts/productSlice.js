@@ -421,9 +421,18 @@ export const createReview = createAsyncThunk(
   'products/createReview',
   async ({ productId, rating, comment }, { rejectWithValue }) => {
     try {
-      const response = await api.post(`/products/${productId}/reviews`, { rating, comment });
+      
+      console.log('Submitting review for product:', productId);
+      
+      const response = await api.post(`/reviews/product/${productId}`, { 
+        rating: Number(rating), 
+        comment: comment.trim() 
+      });
+      
+      console.log('Review submitted successfully:', response.data);
       return { review: response.data, productId };
     } catch (error) {
+      console.error('Create review error:', error);
       return rejectWithValue(error.response?.data?.message || 'Failed to submit review');
     }
   }
