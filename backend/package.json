@@ -8,6 +8,7 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
+    "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.0.6",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.0",
