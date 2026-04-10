@@ -506,6 +506,58 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
+// const cancelOrder = async (req, res) => {
+//   try {
+//     const order = await Order.findById(req.params.id);
+    
+//     if (!order) {
+//       return res.status(404).json({ message: 'Order not found' });
+//     }
+    
+//     // Only allow cancellation if order is pending or confirmed
+//     if (order.orderStatus !== 'pending' && order.orderStatus !== 'confirmed') {
+//       return res.status(400).json({ 
+//         message: `Cannot cancel order with status: ${order.orderStatus}` 
+//       });
+//     }
+    
+//     console.log(`Cancelling order ${order._id} with status ${order.orderStatus}`);
+    
+//     // Restore stock if order was confirmed
+//     if (order.orderStatus === 'confirmed') {
+//       for (const item of order.products) {
+//         const product = await Product.findById(item.product);
+//         if (product) {
+//           product.stock += item.quantity;
+//           await product.save();
+//           console.log(`Restored stock for ${product.name}: ${product.stock} available`);
+//         }
+//       }
+//     }
+    
+//     order.orderStatus = 'cancelled';
+//     const updatedOrder = await order.save();
+    
+//     // Get user details for email
+//     const user = await User.findById(order.user);
+    
+//     // Get who cancelled (user or admin)
+//     const cancelledBy = req.user;
+    
+//     // Send cancellation email to customer and super admin
+//     await EmailService.sendOrderCancellation(updatedOrder, user, cancelledBy);
+    
+//     const populatedOrder = await Order.findById(updatedOrder._id)
+//       .populate('user', 'name email')
+//       .populate('products.product', 'name price stock');
+    
+//     res.json(populatedOrder);
+//   } catch (error) {
+//     console.error('Cancel order error:', error);
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+// Update the cancelOrder function to handle admin vs user cancellation
 const cancelOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
@@ -514,17 +566,48 @@ const cancelOrder = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
     
-    // Only allow cancellation if order is pending or confirmed
-    if (order.orderStatus !== 'pending' && order.orderStatus !== 'confirmed') {
-      return res.status(400).json({ 
-        message: `Cannot cancel order with status: ${order.orderStatus}` 
-      });
+    const isAdmin = req.user?.role === 'admin';
+    const currentStatus = order.orderStatus;
+    
+    // Different cancellation rules for users vs admins
+    if (!isAdmin) {
+      // USER CANCELLATION RULES: Can only cancel if status is 'pending'
+      if (currentStatus !== 'pending') {
+        return res.status(400).json({ 
+          message: `Order cannot be cancelled because it is already ${currentStatus}. Only pending orders can be cancelled by users.` 
+        });
+      }
+      
+      // Additional check: within 48 hours (optional)
+      const orderDate = new Date(order.orderDate || order.createdAt);
+      const currentDate = new Date();
+      const hoursDifference = (currentDate - orderDate) / (1000 * 60 * 60);
+      
+      if (hoursDifference > 48) {
+        return res.status(400).json({ 
+          message: 'Order can only be cancelled within 48 hours of placement.' 
+        });
+      }
+    } else {
+      // ADMIN CANCELLATION RULES: Can cancel anytime except delivered
+      if (currentStatus === 'delivered') {
+        return res.status(400).json({ 
+          message: 'Cannot cancel an order that has already been delivered.' 
+        });
+      }
+      
+      if (currentStatus === 'cancelled') {
+        return res.status(400).json({ 
+          message: 'Order is already cancelled.' 
+        });
+      }
     }
     
-    console.log(`Cancelling order ${order._id} with status ${order.orderStatus}`);
+    console.log(`Cancelling order ${order._id} with status ${currentStatus} by ${isAdmin ? 'Admin' : 'User'}`);
     
-    // Restore stock if order was confirmed
-    if (order.orderStatus === 'confirmed') {
+    // Restore stock if order was confirmed or shipped (for admin cancellations)
+    // For user cancellations, order is always pending, so no stock was deducted
+    if (isAdmin && (currentStatus === 'confirmed' || currentStatus === 'shipped')) {
       for (const item of order.products) {
         const product = await Product.findById(item.product);
         if (product) {
@@ -533,9 +616,16 @@ const cancelOrder = async (req, res) => {
           console.log(`Restored stock for ${product.name}: ${product.stock} available`);
         }
       }
+    } else if (!isAdmin && currentStatus === 'pending') {
+      // User cancelling pending order - no stock to restore since stock wasn't deducted yet
+      console.log('User cancelling pending order - no stock to restore');
     }
     
     order.orderStatus = 'cancelled';
+    order.cancelledAt = Date.now();
+    order.cancelledBy = isAdmin ? 'admin' : 'user';
+    order.cancellationReason = req.body.reason || (isAdmin ? 'Cancelled by admin' : 'Cancelled by customer');
+    
     const updatedOrder = await order.save();
     
     // Get user details for email
