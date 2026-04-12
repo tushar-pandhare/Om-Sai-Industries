@@ -614,7 +614,7 @@ const FloatingActionMenu = ({ onClose }) => {
     ]},
     { category: "⚙️ Settings", items: [
       { name: "Contact Editor", path: "/admin/contact", icon: Edit, color: "from-gray-500 to-gray-600" },
-      { name: "Settings", path: "/admin/settings", icon: Settings, color: "from-gray-500 to-gray-600" }
+      { name: "Settings", path: "/settings", icon: Settings, color: "from-gray-500 to-gray-600" }
     ]}
   ];
 

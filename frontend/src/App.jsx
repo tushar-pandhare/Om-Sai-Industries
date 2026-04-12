@@ -35,6 +35,7 @@ import AdminMessages from './pages/admin/AdminMessages';
 import ManageOrderUserSide from './pages/user/ManageOrderUserSide';
 import EditProduct from './pages/admin/EditProduct';
 import OrderDetails from './pages/admin/OrderDetails';
+import Settings from './pages/Settings';
 
 function App() {
   const { userInfo } = useSelector((state) => state.auth);
@@ -60,6 +61,7 @@ function App() {
         <Route path="/feedback" element={<Feedback />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/settings" element={<Settings />} />
         
         {/* Admin Routes */}
         <Route path="/admin" element={userInfo?.role === 'admin' ? <Dashboard /> : <Navigate to="/" />} />
