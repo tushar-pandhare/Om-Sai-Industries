@@ -1,426 +1,217 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { fetchMyOrders } from '../../features/orders/orderSlice';
 import { 
-  Package, 
-  ShoppingBag, 
+  Tag, 
   Clock, 
-  CheckCircle, 
-  Truck, 
-  TrendingUp,
-  Search,
+  Gift, 
+  Percent, 
   ChevronRight,
-  AlertCircle,
+  Calendar,
+  Sparkles,
+  Flame,
+  Zap,
+  TrendingUp,
+  Shield,
+  Award,
+  Search,
   Filter,
   X,
-  RotateCcw,
-  Eye,
-  Ban,
-  MessageCircle,
-  Star
+  RotateCcw
 } from 'lucide-react';
+import { fetchOffers } from '../../features/offers/offerSlice';
 import toast from 'react-hot-toast';
 
-const Orders = () => {
+const Offers = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { orders, loading } = useSelector((state) => state.orders);
-  const [filterStatus, setFilterStatus] = useState('all');
+  const { offers, loading } = useSelector((state) => state.offers);
+  const [selectedFilter, setSelectedFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedOrder, setExpandedOrder] = useState(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [cancellingOrder, setCancellingOrder] = useState(null);
-  
+
   useEffect(() => {
-    dispatch(fetchMyOrders());
+    dispatch(fetchOffers());
   }, [dispatch]);
-  
-  // Refresh orders every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      dispatch(fetchMyOrders());
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [dispatch]);
-  
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Date not available';
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Date not available';
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    } catch (error) {
-      return 'Date not available';
-    }
+
+  const getActiveOffers = () => {
+    return offers?.filter(offer => new Date(offer.endDate) > new Date()) || [];
   };
-  
-  const totalOrders = orders?.length || 0;
-  const deliveredOrders = orders?.filter(order => order?.orderStatus === 'delivered').length || 0;
-  const pendingOrders = orders?.filter(order => ['pending', 'confirmed', 'processing', 'shipped'].includes(order?.orderStatus)).length || 0;
-  const cancelledOrders = orders?.filter(order => order?.orderStatus === 'cancelled').length || 0;
-  
-  const totalSpent = orders?.reduce((sum, order) => {
-    if (order?.orderStatus === 'delivered' && order?.totalAmount) {
-      return sum + order.totalAmount;
+
+  const getExpiredOffers = () => {
+    return offers?.filter(offer => new Date(offer.endDate) <= new Date()) || [];
+  };
+
+  const filteredOffers = () => {
+    let filtered = offers || [];
+    
+    if (selectedFilter === 'active') {
+      filtered = getActiveOffers();
+    } else if (selectedFilter === 'expired') {
+      filtered = getExpiredOffers();
     }
-    return sum;
-  }, 0) || 0;
-  
-  const filteredOrders = orders?.filter(order => {
-    if (!order) return false;
-    const matchesStatus = filterStatus === 'all' || order.orderStatus === filterStatus;
-    const matchesSearch = searchTerm === '' || 
-      order._id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.products?.some(p => p?.product?.name?.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchesStatus && matchesSearch;
-  });
-  
+    
+    if (searchTerm) {
+      filtered = filtered.filter(offer =>
+        offer.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        offer.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  };
+
+  const getStats = () => {
+    const activeOffers = getActiveOffers();
+    const expiredOffers = getExpiredOffers();
+    const highestDiscount = Math.max(...(offers?.map(o => o.discountValue) || [0]));
+    
+    return { 
+      activeOffers: activeOffers.length, 
+      expiredOffers: expiredOffers.length, 
+      highestDiscount 
+    };
+  };
+
+  const stats = getStats();
+  const displayOffers = filteredOffers();
+
   const clearFilters = () => {
     setSearchTerm('');
-    setFilterStatus('all');
-    toast.success('Filters cleared');
+    setSelectedFilter('all');
+    toast.success('Filters cleared', {
+      icon: '✨',
+      duration: 1500,
+      style: {
+        background: '#F3F4F6',
+        color: '#374151',
+        borderRadius: '10px',
+      },
+    });
   };
-  
+
   const getActiveFiltersCount = () => {
     let count = 0;
     if (searchTerm) count++;
-    if (filterStatus !== 'all') count++;
+    if (selectedFilter !== 'all') count++;
     return count;
   };
-  
-  // Check if order can be cancelled (within 48 hours and not shipped/delivered)
-  const canCancelOrder = (order) => {
-    if (!order) return false;
-    if (['shipped', 'delivered', 'cancelled'].includes(order.orderStatus)) {
-      return false;
-    }
-    const orderDate = new Date(order.orderDate || order.createdAt);
-    const currentDate = new Date();
-    const hoursDifference = (currentDate - orderDate) / (1000 * 60 * 60);
-    return hoursDifference <= 48;
-  };
-  
-  const handleCancelOrder = async (order) => {
-    if (!canCancelOrder(order)) {
-      toast.error('Order cannot be cancelled at this time');
-      return;
-    }
+
+  // Offer Card Component with fixed Shop Now navigation
+  const OfferCard = ({ offer, isExpired = false }) => {
+    const isActive = new Date(offer.endDate) > new Date();
+    const daysLeft = Math.ceil((new Date(offer.endDate) - new Date()) / (1000 * 60 * 60 * 24));
     
-    setCancellingOrder(order._id);
-    
-    // Simulate API call - Replace with actual API call
-    setTimeout(() => {
-      toast.success(`Order #${order._id.slice(-8)} has been cancelled`);
-      dispatch(fetchMyOrders()); // Refresh orders
-      setCancellingOrder(null);
-    }, 1000);
-  };
-  
-  const handleReorder = (order) => {
-    // Add all items from order to cart
-    order.products?.forEach(item => {
-      const product = item.product || item;
-      // Dispatch add to cart action here
-      console.log('Reordering:', product);
-    });
-    toast.success('Items added to cart');
-    navigate('/cart');
-  };
-  
-  const handleWriteReview = (order) => {
-    navigate('/feedback', { state: { orderId: order._id } });
-  };
-  
-  const handleTrackOrder = (order) => {
-    navigate(`/orders/${order._id}`);
-  };
-  
-  const getStatusConfig = (orderStatus) => {
-    const configs = {
-      pending: { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200', label: 'Pending', icon: Clock, color: '#f59e0b' },
-      confirmed: { bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-200', label: 'Confirmed', icon: CheckCircle, color: '#6366f1' },
-      processing: { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200', label: 'Processing', icon: Package, color: '#8b5cf6' },
-      shipped: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200', label: 'Shipped', icon: Truck, color: '#3b82f6' },
-      delivered: { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Delivered', icon: CheckCircle, color: '#10b981' },
-      cancelled: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200', label: 'Cancelled', icon: AlertCircle, color: '#ef4444' }
-    };
-    return configs[orderStatus] || configs.pending;
-  };
-  
-  const OrderCard = ({ order }) => {
-    const isExpanded = expandedOrder === order._id;
-    const statusConfig = getStatusConfig(order?.orderStatus);
-    const StatusIcon = statusConfig.icon;
-    const cancellable = canCancelOrder(order);
-    
-    const orderTotal = order?.totalAmount || 
-      order?.products?.reduce((sum, p) => sum + ((p?.price || 0) * (p?.quantity || 0)), 0) || 0;
-    
-    const getProductName = (item) => {
-      return item?.product?.name || item?.name || 'Product';
-    };
-    
-    const getProductImage = (item) => {
-      return item?.product?.images?.[0] || item?.image || '/api/placeholder/50/50';
+    const handleShopNow = () => {
+      if (!isActive) {
+        toast.error('This offer has expired', {
+          icon: '⏰',
+          duration: 2000,
+        });
+        return;
+      }
+      
+      // Navigate to products page with offer details in URL params
+      navigate(`/products?offer=${offer._id}&title=${encodeURIComponent(offer.title)}&discount=${offer.discountValue}&type=${offer.discountType}`);
     };
     
     return (
-      <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-100">
-        {/* Order Header */}
-        <div className="p-5 bg-gradient-to-r from-slate-50 to-gray-50 border-b border-slate-100">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-4">
-              <div>
-                <p className="text-xs text-slate-500 font-medium">ORDER ID</p>
-                <p className="text-sm font-semibold text-slate-800 font-mono">
-                  #{order?._id?.slice(-8)?.toUpperCase() || 'N/A'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 font-medium">PLACED ON</p>
-                <p className="text-sm font-medium text-slate-700">
-                  {formatDate(order?.orderDate || order?.createdAt)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 font-medium">TOTAL AMOUNT</p>
-                <p className="text-lg font-bold text-indigo-600">₹{orderTotal.toLocaleString()}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${statusConfig.bg} ${statusConfig.text}`}>
-                <StatusIcon className="w-3.5 h-3.5" />
-                <span className="text-xs font-semibold">{statusConfig.label}</span>
-              </div>
-              <button
-                onClick={() => setExpandedOrder(isExpanded ? null : order._id)}
-                className="p-2 hover:bg-white rounded-lg transition-colors"
-              >
-                {isExpanded ? '▲' : '▼'}
-              </button>
-            </div>
+      <div className={`group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-100 ${isExpired ? 'opacity-75' : ''}`}>
+        {/* Discount Badge */}
+        <div className="relative">
+          <div className={`absolute top-4 right-4 z-10 ${isActive ? 'bg-gradient-to-r from-indigo-600 to-purple-600' : 'bg-slate-500'} text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg`}>
+            {offer.discountType === 'percentage' 
+              ? `${offer.discountValue}% OFF` 
+              : `₹${offer.discountValue} OFF`}
           </div>
+          
+          {/* Decorative top bar */}
+          <div className={`h-2 ${isActive ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500' : 'bg-slate-300'}`}></div>
         </div>
         
-        {/* Order Items Preview */}
-        <div className="p-5">
-          <div className="flex flex-wrap gap-4">
-            {order?.products?.slice(0, 3).map((item, idx) => (
-              <div key={idx} className="flex items-center gap-3">
-                <img
-                  src={getProductImage(item)}
-                  alt={getProductName(item)}
-                  className="w-12 h-12 object-cover rounded-lg bg-slate-100"
-                  onError={(e) => { e.target.src = '/api/placeholder/50/50'; }}
-                />
-                <div>
-                  <p className="text-sm font-medium text-slate-800">{getProductName(item)}</p>
-                  <p className="text-xs text-slate-500">Qty: {item?.quantity || 0}</p>
-                </div>
-              </div>
-            ))}
-            {(order?.products?.length || 0) > 3 && (
-              <div className="flex items-center justify-center w-12 h-12 bg-slate-100 rounded-lg">
-                <span className="text-xs font-semibold text-slate-600">+{order.products.length - 3}</span>
-              </div>
+        {/* Content */}
+        <div className="p-6">
+          {/* Header */}
+          <div className="mb-3">
+            <h3 className="text-xl font-bold text-slate-800 mb-1">{offer.title}</h3>
+            {offer.description && (
+              <p className="text-slate-500 text-sm">{offer.description}</p>
             )}
           </div>
+          
+          {/* Timer / Status */}
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
+            {isActive ? (
+              <div className="flex items-center gap-1.5 text-sm">
+                <Clock className="h-4 w-4 text-emerald-600" />
+                <span className="text-emerald-600 font-medium">
+                  {daysLeft > 0 ? `${daysLeft} days left` : 'Ending soon'}
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-sm">
+                <Calendar className="h-4 w-4 text-slate-400" />
+                <span className="text-slate-400">Expired</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5 text-sm text-slate-400">
+              <Tag className="h-4 w-4" />
+              <span>Limited time</span>
+            </div>
+          </div>
+          
+          {/* Validity Period */}
+          <div className="bg-slate-50 rounded-xl p-3 mb-4">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500">Valid from:</span>
+              <span className="font-medium text-slate-700">
+                {new Date(offer.startDate).toLocaleDateString()}
+              </span>
+              <span className="text-slate-400">→</span>
+              <span className="font-medium text-slate-700">
+                {new Date(offer.endDate).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+          
+          {/* CTA Button - Fixed Shop Now */}
+          <button
+            onClick={handleShopNow}
+            disabled={!isActive}
+            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all duration-300 ${
+              isActive 
+                ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 shadow-md hover:shadow-lg transform hover:scale-[1.02]' 
+                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+            }`}
+          >
+            {isActive ? (
+              <>
+                Shop Now
+                <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </>
+            ) : (
+              'Offer Expired'
+            )}
+          </button>
         </div>
-        
-        {/* Expanded Details */}
-        {isExpanded && (
-          <div className="border-t border-slate-100 bg-slate-50 p-5">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Shipping Address */}
-              <div>
-                <h4 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                  📍 Shipping Address
-                </h4>
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-                  {order?.shippingAddress ? (
-                    <>
-                      <p className="text-sm text-slate-700">{order.shippingAddress.street || 'N/A'}</p>
-                      <p className="text-sm text-slate-700">
-                        {order.shippingAddress.city || 'N/A'}, {order.shippingAddress.state || 'N/A'} - {order.shippingAddress.pincode || 'N/A'}
-                      </p>
-                      <p className="text-sm text-slate-700">{order.shippingAddress.country || 'India'}</p>
-                    </>
-                  ) : (
-                    <p className="text-sm text-slate-500">No address available</p>
-                  )}
-                </div>
-              </div>
-              
-              {/* Order Timeline */}
-              <div>
-                <h4 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                  📅 Order Timeline
-                </h4>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                      <CheckCircle className="w-4 h-4 text-emerald-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-800">Order Placed</p>
-                      <p className="text-xs text-slate-500">{formatDate(order?.orderDate || order?.createdAt)}</p>
-                    </div>
-                  </div>
-                  {order?.orderStatus !== 'pending' && order?.orderStatus !== 'cancelled' && (
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                        <Package className="w-4 h-4 text-indigo-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">
-                          {order?.orderStatus === 'confirmed' ? 'Confirmed' : 
-                           order?.orderStatus === 'processing' ? 'Processing' : 
-                           order?.orderStatus === 'shipped' ? 'Shipped' : 'Updated'}
-                        </p>
-                        <p className="text-xs text-slate-500">{formatDate(order?.updatedAt)}</p>
-                      </div>
-                    </div>
-                  )}
-                  {order?.orderStatus === 'delivered' && (
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                        <Truck className="w-4 h-4 text-emerald-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">Delivered</p>
-                        <p className="text-xs text-slate-500">{formatDate(order?.deliveredAt || order?.updatedAt)}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            {/* Items List */}
-            {order?.products && order.products.length > 0 && (
-              <div className="mt-6">
-                <h4 className="text-sm font-semibold text-slate-800 mb-3">Order Items</h4>
-                <div className="space-y-2">
-                  {order.products.map((item, idx) => (
-                    <div key={idx} className="bg-white rounded-xl p-3 flex justify-between items-center shadow-sm border border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={getProductImage(item)}
-                          alt={getProductName(item)}
-                          className="w-10 h-10 object-cover rounded-lg"
-                          onError={(e) => { e.target.src = '/api/placeholder/50/50'; }}
-                        />
-                        <div>
-                          <p className="text-sm font-medium text-slate-800">{getProductName(item)}</p>
-                          <p className="text-xs text-slate-500">Quantity: {item?.quantity || 0}</p>
-                        </div>
-                      </div>
-                      <p className="text-sm font-semibold text-slate-800">
-                        ₹{((item?.price || 0) * (item?.quantity || 0)).toLocaleString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Action Buttons - Invoice and Print removed */}
-            <div className="mt-6 flex flex-wrap gap-3 justify-end">
-              {/* Cancel Order Button */}
-              {order?.orderStatus !== 'delivered' && order?.orderStatus !== 'cancelled' && (
-                <button
-                  onClick={() => handleCancelOrder(order)}
-                  disabled={cancellingOrder === order._id || !cancellable}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                    cancellable 
-                      ? 'bg-red-600 hover:bg-red-700 text-white shadow-sm' 
-                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  {cancellingOrder === order._id ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <Ban className="w-4 h-4" />
-                  )}
-                  {cancellable ? 'Cancel Order' : 'Cannot Cancel'}
-                </button>
-              )}
-              
-              {/* Track Order Button */}
-              <button
-                onClick={() => handleTrackOrder(order)}
-                className="px-4 py-2 border border-indigo-600 text-indigo-600 text-sm font-medium rounded-lg hover:bg-indigo-50 transition-colors flex items-center gap-2"
-              >
-                <Truck className="w-4 h-4" />
-                Track Order
-              </button>
-              
-              {/* Reorder Button */}
-              {order?.orderStatus === 'delivered' && (
-                <button
-                  onClick={() => handleReorder(order)}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2 shadow-sm"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Reorder
-                </button>
-              )}
-              
-              {/* Write Review Button */}
-              {order?.orderStatus === 'delivered' && (
-                <button
-                  onClick={() => handleWriteReview(order)}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <Star className="w-4 h-4" />
-                  Write Review
-                </button>
-              )}
-              
-              {/* Need Help Button */}
-              <Link
-                to="/contact"
-                className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-              >
-                <MessageCircle className="w-4 h-4" />
-                Need Help?
-              </Link>
-            </div>
-            
-            {/* Cancellation Info */}
-            {cancellable && order?.orderStatus !== 'cancelled' && (
-              <div className="mt-3 p-2 bg-amber-50 rounded-lg text-center">
-                <p className="text-xs text-amber-700">
-                  ⏰ You can cancel this order within 48 hours of placement
-                </p>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     );
   };
-  
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
         <div className="flex flex-col items-center">
           <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
-          <p className="mt-4 text-slate-500 font-light tracking-widest uppercase text-xs">Loading Orders</p>
+          <p className="mt-4 text-slate-500 font-light tracking-widest uppercase text-xs">Loading Offers</p>
         </div>
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      {/* Hero Section */}
+      {/* Hero Section - Matching Products Page */}
       <div className="bg-slate-900 pt-20 pb-32 relative overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full opacity-20">
           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[70%] bg-indigo-500 rounded-full blur-[120px]" />
@@ -429,192 +220,222 @@ const Orders = () => {
         
         <div className="relative container mx-auto px-4 text-center">
           <span className="inline-block py-1 px-3 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold tracking-widest uppercase mb-4">
-            Order History
+            Limited Time Only
           </span>
           <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">
-            My <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">Orders</span>
+            Exclusive <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">Offers</span>
           </h1>
           <p className="text-slate-400 max-w-2xl mx-auto text-lg font-light leading-relaxed">
-            Track and manage all your orders in one place
+            Unlock amazing discounts and save big on your favorite products
           </p>
         </div>
       </div>
 
       <div className="container mx-auto px-4 -mt-16 relative z-10 pb-20">
-        {/* Stats Cards */}
-        {totalOrders > 0 && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-slate-100 group">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-500 text-sm font-medium">Total Orders</p>
-                  <p className="text-3xl font-bold text-slate-800 mt-1">{totalOrders}</p>
-                </div>
-                <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <ShoppingBag className="w-6 h-6 text-indigo-600" />
-                </div>
+        
+        {/* Stats Cards - Matching Products Page */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-slate-100 group">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-500 text-sm font-medium">Active Offers</p>
+                <p className="text-3xl font-bold text-slate-800 mt-1">{stats.activeOffers}</p>
               </div>
-            </div>
-            
-            <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-slate-100 group">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-500 text-sm font-medium">Delivered</p>
-                  <p className="text-3xl font-bold text-emerald-600 mt-1">{deliveredOrders}</p>
-                </div>
-                <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <CheckCircle className="w-6 h-6 text-emerald-600" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-slate-100 group">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-500 text-sm font-medium">In Progress</p>
-                  <p className="text-3xl font-bold text-amber-600 mt-1">{pendingOrders}</p>
-                </div>
-                <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Clock className="w-6 h-6 text-amber-600" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-2xl shadow-lg p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-indigo-200 text-sm font-medium">Total Spent</p>
-                  <p className="text-2xl font-bold text-white mt-1">₹{totalSpent.toLocaleString()}</p>
-                </div>
-                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-white" />
-                </div>
+              <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Flame className="h-6 w-6 text-emerald-600" />
               </div>
             </div>
           </div>
-        )}
-        
-        {/* Search and Filter Bar */}
-        {totalOrders > 0 && (
-          <div className="bg-white rounded-2xl shadow-2xl shadow-slate-200/60 p-2 md:p-3 mb-8 border border-slate-100">
-            <div className="flex flex-col lg:flex-row gap-2">
-              <div className="relative flex-grow">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search by order ID or product name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all text-slate-700"
-                />
+          
+          <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-slate-100 group">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-500 text-sm font-medium">Max Discount</p>
+                <p className="text-3xl font-bold text-indigo-600 mt-1">{stats.highestDiscount}%</p>
               </div>
-
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0">
-                <button
-                  onClick={() => setIsFilterOpen(true)}
-                  className="flex items-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all shrink-0"
-                >
-                  <Filter className="h-4 w-4" />
-                  <span className="text-sm font-semibold">Filters</span>
-                  {getActiveFiltersCount() > 0 && (
-                    <span className="ml-1 bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                      {getActiveFiltersCount()}
-                    </span>
-                  )}
-                </button>
-
-                <div className="flex gap-2 bg-slate-50 p-1 rounded-xl">
-                  {['all', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'].map(status => (
-                    <button
-                      key={status}
-                      onClick={() => setFilterStatus(status)}
-                      className={`px-4 py-2.5 rounded-lg font-medium transition-all whitespace-nowrap text-sm ${
-                        filterStatus === status 
-                          ? 'bg-white shadow-sm text-indigo-600' 
-                          : 'text-slate-600 hover:text-indigo-600'
-                      }`}
-                    >
-                      {status === 'all' ? 'All' : status}
-                    </button>
-                  ))}
-                </div>
+              <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Percent className="h-6 w-6 text-indigo-600" />
               </div>
             </div>
           </div>
-        )}
-        
-        {/* Orders List */}
-        {!filteredOrders || filteredOrders.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm p-12 text-center border border-slate-100">
-            <div className="max-w-md mx-auto">
-              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                {searchTerm || filterStatus !== 'all' ? (
-                  <Search className="w-10 h-10 text-slate-400" />
-                ) : (
-                  <ShoppingBag className="w-10 h-10 text-slate-400" />
+          
+          <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 border border-slate-100 group">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-500 text-sm font-medium">Total Offers</p>
+                <p className="text-3xl font-bold text-slate-800 mt-1">{offers?.length || 0}</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Gift className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Search and Filter Bar - Matching Products Page */}
+        <div className="bg-white rounded-2xl shadow-2xl shadow-slate-200/60 p-2 md:p-3 mb-8 border border-slate-100">
+          <div className="flex flex-col lg:flex-row gap-2">
+            <div className="relative flex-grow">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search offers by name or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all text-slate-700"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0">
+              <button
+                onClick={() => setIsFilterOpen(true)}
+                className="flex items-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all shrink-0"
+              >
+                <Filter className="h-4 w-4" />
+                <span className="text-sm font-semibold">Filters</span>
+                {getActiveFiltersCount() > 0 && (
+                  <span className="ml-1 bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                    {getActiveFiltersCount()}
+                  </span>
                 )}
-              </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">
-                {searchTerm || filterStatus !== 'all' ? 'No matching orders' : 'No orders yet'}
-              </h3>
-              <p className="text-slate-500 mb-6 text-sm">
-                {searchTerm || filterStatus !== 'all' 
-                  ? 'Try adjusting your search or filter criteria' 
-                  : 'Looks like you haven\'t placed any orders. Start shopping to see your orders here!'}
-              </p>
-              {(searchTerm || filterStatus !== 'all') ? (
+              </button>
+
+              <div className="flex gap-2 bg-slate-50 p-1 rounded-xl">
                 <button
-                  onClick={clearFilters}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-all"
+                  onClick={() => setSelectedFilter('all')}
+                  className={`px-5 py-3 rounded-lg font-medium transition-all whitespace-nowrap text-sm ${
+                    selectedFilter === 'all'
+                      ? 'bg-white shadow-sm text-indigo-600'
+                      : 'text-slate-600 hover:text-indigo-600'
+                  }`}
                 >
-                  <RotateCcw className="w-4 h-4" />
-                  Clear Filters
+                  All
                 </button>
-              ) : (
-                <Link 
-                  to="/products" 
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-indigo-800 transition-all shadow-md"
+                <button
+                  onClick={() => setSelectedFilter('active')}
+                  className={`px-5 py-3 rounded-lg font-medium transition-all whitespace-nowrap text-sm ${
+                    selectedFilter === 'active'
+                      ? 'bg-white shadow-sm text-emerald-600'
+                      : 'text-slate-600 hover:text-emerald-600'
+                  }`}
                 >
-                  <ShoppingBag className="w-4 h-4" />
-                  Start Shopping
-                </Link>
-              )}
+                  Active
+                </button>
+                <button
+                  onClick={() => setSelectedFilter('expired')}
+                  className={`px-5 py-3 rounded-lg font-medium transition-all whitespace-nowrap text-sm ${
+                    selectedFilter === 'expired'
+                      ? 'bg-white shadow-sm text-slate-600'
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  Expired
+                </button>
+              </div>
             </div>
+          </div>
+          
+          {/* Active Filters Indicator */}
+          {getActiveFiltersCount() > 0 && (
+            <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
+              <div className="text-sm text-slate-500">
+                {displayOffers.length} offer{displayOffers.length !== 1 ? 's' : ''} found
+              </div>
+              <button
+                onClick={clearFilters}
+                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Clear Filters
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* No Results */}
+        {displayOffers.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-sm p-16 text-center border border-slate-100">
+            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Gift className="h-10 w-10 text-slate-300" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">No offers found</h3>
+            <p className="text-slate-500 mb-6 max-w-md mx-auto">
+              {searchTerm 
+                ? `No offers matching "${searchTerm}"` 
+                : selectedFilter === 'active' 
+                  ? 'No active offers at the moment. Check back soon!' 
+                  : 'No offers available right now'}
+            </p>
+            {getActiveFiltersCount() > 0 && (
+              <button
+                onClick={clearFilters}
+                className="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-indigo-800 transition-all shadow-md"
+              >
+                View All Offers
+              </button>
+            )}
           </div>
         ) : (
           <>
-            <div className="mb-4 flex justify-between items-center">
-              <p className="text-sm text-slate-500">
-                Showing <span className="font-semibold text-slate-700">{filteredOrders.length}</span> of{' '}
-                <span className="font-semibold text-slate-700">{orders?.length || 0}</span> orders
-              </p>
-              {(searchTerm || filterStatus !== 'all') && (
-                <button
-                  onClick={clearFilters}
-                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  Clear Filters
-                </button>
-              )}
-            </div>
-            
-            <div className="space-y-5">
-              {filteredOrders.map((order) => (
-                <OrderCard key={order._id} order={order} />
-              ))}
-            </div>
+            {/* Active Offers Section */}
+            {selectedFilter === 'all' && getActiveOffers().length > 0 && (
+              <div className="mb-10">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-1 h-7 bg-gradient-to-b from-emerald-500 to-green-500 rounded-full"></div>
+                  <h2 className="text-xl font-bold text-slate-800">🔥 Active Offers</h2>
+                  <span className="text-xs font-medium text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">
+                    {getActiveOffers().length} available
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {getActiveOffers().map((offer) => (
+                    <OfferCard key={offer._id} offer={offer} isExpired={false} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Expired Offers Section */}
+            {selectedFilter === 'all' && getExpiredOffers().length > 0 && (
+              <div>
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-1 h-7 bg-gradient-to-b from-slate-400 to-slate-500 rounded-full"></div>
+                  <h2 className="text-xl font-bold text-slate-800">📋 Past Offers</h2>
+                  <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                    {getExpiredOffers().length} expired
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {getExpiredOffers().map((offer) => (
+                    <OfferCard key={offer._id} offer={offer} isExpired={true} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Filtered Single View */}
+            {selectedFilter !== 'all' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {displayOffers.map((offer) => (
+                  <OfferCard 
+                    key={offer._id} 
+                    offer={offer} 
+                    isExpired={selectedFilter === 'expired'} 
+                  />
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
 
-      {/* Filter Panel */}
+      {/* Filter Panel - Matching Products Page */}
       {isFilterOpen && (
         <div className="fixed inset-0 z-[100] flex justify-end">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={() => setIsFilterOpen(false)} />
           <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-slide-left">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h3 className="text-xl font-bold text-slate-900">Filter Orders</h3>
+              <h3 className="text-xl font-bold text-slate-900">Filter Offers</h3>
               <button onClick={() => setIsFilterOpen(false)} className="p-2 hover:bg-white rounded-full text-slate-400 transition-all">
                 <X className="h-6 w-6" />
               </button>
@@ -622,27 +443,23 @@ const Orders = () => {
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
               <div>
-                <label className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 block">Order Status</label>
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 block">Offer Status</label>
                 <div className="space-y-2">
                   {[
-                    { id: 'all', label: 'All Orders', icon: ShoppingBag },
-                    { id: 'pending', label: 'Pending', icon: Clock },
-                    { id: 'confirmed', label: 'Confirmed', icon: CheckCircle },
-                    { id: 'processing', label: 'Processing', icon: Package },
-                    { id: 'shipped', label: 'Shipped', icon: Truck },
-                    { id: 'delivered', label: 'Delivered', icon: CheckCircle },
-                    { id: 'cancelled', label: 'Cancelled', icon: AlertCircle }
+                    { id: 'all', label: 'All Offers', icon: Gift },
+                    { id: 'active', label: 'Active Only', icon: Flame },
+                    { id: 'expired', label: 'Expired', icon: Calendar }
                   ].map(option => {
                     const Icon = option.icon;
                     return (
                       <button
                         key={option.id}
                         onClick={() => {
-                          setFilterStatus(option.id);
+                          setSelectedFilter(option.id);
                           setIsFilterOpen(false);
                         }}
                         className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
-                          filterStatus === option.id
+                          selectedFilter === option.id
                             ? 'bg-indigo-50 text-indigo-600 border border-indigo-200'
                             : 'hover:bg-slate-50 text-slate-600'
                         }`}
@@ -687,4 +504,4 @@ const Orders = () => {
   );
 };
 
-export default Orders;
+export default Offers;
