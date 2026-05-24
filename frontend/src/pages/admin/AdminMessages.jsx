@@ -1,775 +1,573 @@
-// // src/pages/admin/AdminMessages.jsx
-// import React, { useEffect, useState } from 'react';
-// import { useDispatch, useSelector } from 'react-redux';
-// import { Mail, Phone, User, Calendar, Search, Filter, Trash2, Eye, MessageSquare, CheckCircle, XCircle } from 'lucide-react';
-// import { fetchAllMessages, deleteMessage, markAsRead } from '../../features/messages/messageSlice';
-// import toast from 'react-hot-toast';
-
-// const AdminMessages = () => {
-//   const dispatch = useDispatch();
-//   const { messages = [], loading = false, error = null } = useSelector((state) => state.messages || {});
-//   const [searchTerm, setSearchTerm] = useState('');
-//   const [filter, setFilter] = useState('all');
-//   const [selectedMessage, setSelectedMessage] = useState(null);
-//   const [showFilters, setShowFilters] = useState(false);
-
-//   useEffect(() => {
-//     dispatch(fetchAllMessages());
-//   }, [dispatch]);
-
-//   const filteredMessages = Array.isArray(messages) ? messages.filter(message => {
-//     const matchesSearch = 
-//       message.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       message.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       message.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       message.phone?.includes(searchTerm);
-    
-//     const matchesFilter = 
-//       filter === 'all' ? true :
-//       filter === 'read' ? message.isRead :
-//       filter === 'unread' ? !message.isRead : true;
-    
-//     return matchesSearch && matchesFilter;
-//   }) : [];
-
-//   const handleDelete = async (id, name) => {
-//     if (window.confirm(`Are you sure you want to delete message from ${name}?`)) {
-//       const result = await dispatch(deleteMessage(id));
-//       if (deleteMessage.fulfilled.match(result)) {
-//         toast.success('Message deleted successfully');
-//         if (selectedMessage?._id === id) setSelectedMessage(null);
-//       } else {
-//         toast.error('Failed to delete message');
-//       }
-//     }
-//   };
-
-//   const handleMarkAsRead = async (id) => {
-//     const result = await dispatch(markAsRead(id));
-//     if (markAsRead.fulfilled.match(result)) {
-//       toast.success('Message marked as read');
-//     }
-//   };
-
-//   const getStatusColor = (isRead) => {
-//     return isRead 
-//       ? 'bg-green-100 text-green-800'
-//       : 'bg-yellow-100 text-yellow-800';
-//   };
-
-//   const getStatusText = (isRead) => {
-//     return isRead ? 'Read' : 'Unread';
-//   };
-
-//   const formatDate = (date) => {
-//     if (!date) return 'N/A';
-//     return new Date(date).toLocaleString('en-US', {
-//       year: 'numeric',
-//       month: 'short',
-//       day: 'numeric',
-//       hour: '2-digit',
-//       minute: '2-digit'
-//     });
-//   };
-
-//   const stats = {
-//     total: filteredMessages?.length || 0,
-//     unread: filteredMessages?.filter(m => !m.isRead).length || 0,
-//     read: filteredMessages?.filter(m => m.isRead).length || 0
-//   };
-
-//   if (loading && !messages.length) {
-//     return (
-//       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center">
-//         <div className="text-center">
-//           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-//           <p className="mt-4 text-slate-600">Loading messages...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 pt-20 pb-8">
-//       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-//         {/* Header */}
-//         <div className="mb-8">
-//           <h1 className="text-3xl font-bold text-slate-800">Contact Messages</h1>
-//           <p className="text-slate-500 mt-1">View and manage customer inquiries</p>
-//         </div>
-
-//         {/* Stats Overview */}
-//         {filteredMessages.length > 0 && (
-//           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-//             <div className="bg-white rounded-xl shadow-lg p-4">
-//               <div className="flex items-center justify-between">
-//                 <div>
-//                   <p className="text-sm text-slate-500">Total Messages</p>
-//                   <p className="text-2xl font-bold text-slate-800">{stats.total}</p>
-//                 </div>
-//                 <div className="p-2 bg-indigo-100 rounded-lg">
-//                   <MessageSquare className="h-5 w-5 text-indigo-600" />
-//                 </div>
-//               </div>
-//             </div>
-            
-//             <div className="bg-white rounded-xl shadow-lg p-4">
-//               <div className="flex items-center justify-between">
-//                 <div>
-//                   <p className="text-sm text-slate-500">Unread</p>
-//                   <p className="text-2xl font-bold text-yellow-600">{stats.unread}</p>
-//                 </div>
-//                 <div className="p-2 bg-yellow-100 rounded-lg">
-//                   <Mail className="h-5 w-5 text-yellow-600" />
-//                 </div>
-//               </div>
-//             </div>
-            
-//             <div className="bg-white rounded-xl shadow-lg p-4">
-//               <div className="flex items-center justify-between">
-//                 <div>
-//                   <p className="text-sm text-slate-500">Read</p>
-//                   <p className="text-2xl font-bold text-green-600">{stats.read}</p>
-//                 </div>
-//                 <div className="p-2 bg-green-100 rounded-lg">
-//                   <CheckCircle className="h-5 w-5 text-green-600" />
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//         )}
-      
-//         {/* Search and Filters */}
-//         <div className="bg-white rounded-xl shadow-lg p-4 mb-6">
-//           <div className="flex flex-col sm:flex-row gap-3">
-//             <div className="flex-1 relative">
-//               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-slate-400" />
-//               <input
-//                 type="text"
-//                 placeholder="Search by name, email, phone, or message..."
-//                 value={searchTerm}
-//                 onChange={(e) => setSearchTerm(e.target.value)}
-//                 className="w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-2.5 text-sm sm:text-base border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
-//               />
-//             </div>
-//             <button
-//               onClick={() => setShowFilters(!showFilters)}
-//               className="px-4 py-2 border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 text-slate-700"
-//             >
-//               <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
-//               <span className="hidden sm:inline">Filter</span>
-//               {filter !== 'all' && (
-//                 <span className="ml-1 bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full">
-//                   Active
-//                 </span>
-//               )}
-//             </button>
-//           </div>
-          
-//           {showFilters && (
-//             <div className="mt-4 pt-4 border-t border-slate-200">
-//               <div>
-//                 <label className="block text-sm font-medium text-slate-700 mb-2">
-//                   Status Filter
-//                 </label>
-//                 <div className="flex flex-wrap gap-2">
-//                   {[
-//                     { value: 'all', label: 'All Messages' },
-//                     { value: 'unread', label: 'Unread' },
-//                     { value: 'read', label: 'Read' }
-//                   ].map(option => (
-//                     <button
-//                       key={option.value}
-//                       onClick={() => setFilter(option.value)}
-//                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-//                         filter === option.value
-//                           ? 'bg-indigo-600 text-white'
-//                           : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-//                       }`}
-//                     >
-//                       {option.label}
-//                     </button>
-//                   ))}
-//                 </div>
-//               </div>
-//             </div>
-//           )}
-//         </div>
-      
-//         {/* Messages List */}
-//         {filteredMessages.length === 0 ? (
-//           <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
-//             <div className="text-slate-400 mb-4">
-//               <Mail className="h-16 w-16 mx-auto" />
-//             </div>
-//             <h3 className="text-lg font-medium text-slate-800 mb-2">No messages found</h3>
-//             <p className="text-slate-500">
-//               {searchTerm || filter !== 'all' 
-//                 ? 'Try adjusting your search or filters' 
-//                 : 'No contact messages yet'}
-//             </p>
-//           </div>
-//         ) : (
-//           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-//             {filteredMessages.map((message) => (
-//               <div 
-//                 key={message._id} 
-//                 className={`bg-white rounded-xl shadow-lg border overflow-hidden hover:shadow-xl transition-all cursor-pointer ${
-//                   !message.isRead ? 'border-yellow-400 bg-yellow-50/30' : 'border-slate-200'
-//                 }`}
-//                 onClick={() => setSelectedMessage(selectedMessage?._id === message._id ? null : message)}
-//               >
-//                 <div className="p-5">
-//                   {/* Header */}
-//                   <div className="flex justify-between items-start mb-3">
-//                     <div className="flex-1">
-//                       <div className="flex items-center gap-2 mb-2">
-//                         <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-//                           {message.name?.charAt(0).toUpperCase() || '?'}
-//                         </div>
-//                         <div>
-//                           <h3 className="font-semibold text-slate-800">{message.name || 'Unknown'}</h3>
-//                           <p className="text-xs text-slate-500">{message.email || 'No email'}</p>
-//                         </div>
-//                       </div>
-//                     </div>
-//                     <div className="flex gap-2">
-//                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(message.isRead)}`}>
-//                         {getStatusText(message.isRead)}
-//                       </span>
-//                     </div>
-//                   </div>
-                  
-//                   {/* Message Preview */}
-//                   <div className="mb-3">
-//                     <p className="text-slate-600 text-sm line-clamp-2">
-//                       {message.message || 'No message content'}
-//                     </p>
-//                   </div>
-                  
-//                   {/* Details */}
-//                   <div className="space-y-1 mb-3">
-//                     {message.phone && (
-//                       <div className="flex items-center gap-2 text-xs text-slate-500">
-//                         <Phone className="h-3 w-3" />
-//                         <span>{message.phone}</span>
-//                       </div>
-//                     )}
-//                     <div className="flex items-center gap-2 text-xs text-slate-500">
-//                       <Calendar className="h-3 w-3" />
-//                       <span>{formatDate(message.createdAt)}</span>
-//                     </div>
-//                   </div>
-                  
-//                   {/* Actions */}
-//                   <div className="flex gap-2 pt-3 border-t border-slate-200">
-//                     {!message.isRead && (
-//                       <button
-//                         onClick={(e) => {
-//                           e.stopPropagation();
-//                           handleMarkAsRead(message._id);
-//                         }}
-//                         className="flex-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
-//                       >
-//                         <CheckCircle className="h-4 w-4" />
-//                         Mark as Read
-//                       </button>
-//                     )}
-//                     <button
-//                       onClick={(e) => {
-//                         e.stopPropagation();
-//                         handleDelete(message._id, message.name);
-//                       }}
-//                       className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1"
-//                     >
-//                       <Trash2 className="h-4 w-4" />
-//                       Delete
-//                     </button>
-//                   </div>
-//                 </div>
-                
-//                 {/* Expanded Message Details */}
-//                 {selectedMessage?._id === message._id && (
-//                   <div className="border-t border-slate-200 bg-slate-50 p-5">
-//                     <h4 className="font-semibold text-slate-800 mb-2 flex items-center gap-2">
-//                       <MessageSquare className="h-4 w-4" />
-//                       Full Message
-//                     </h4>
-//                     <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
-//                       {message.message}
-//                     </p>
-                    
-//                     <div className="mt-4 pt-3 border-t border-slate-200">
-//                       <h4 className="font-semibold text-slate-800 mb-2">Contact Details</h4>
-//                       <div className="space-y-1 text-sm">
-//                         <p><span className="font-medium text-slate-600">Name:</span> {message.name}</p>
-//                         <p><span className="font-medium text-slate-600">Email:</span> {message.email}</p>
-//                         {message.phone && <p><span className="font-medium text-slate-600">Phone:</span> {message.phone}</p>}
-//                         <p><span className="font-medium text-slate-600">Received:</span> {formatDate(message.createdAt)}</p>
-//                       </div>
-//                     </div>
-//                   </div>
-//                 )}
-//               </div>
-//             ))}
-//           </div>
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default AdminMessages;
-// src/pages/admin/AdminMessages.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { useSocket } from '../../context/SocketContext';
 import { 
-  Mail, Phone, User, Calendar, Search, Filter, Trash2, 
-  Eye, MessageSquare, CheckCircle, XCircle, ArrowLeft,
-  Inbox, Send, Clock, AlertCircle
+  Mail, Send, MessageSquare, CheckCircle, ArrowLeft,
+  Clock, AlertCircle, CheckCheck, Users, UserCheck, 
+  UserX, Loader2, Search, Plus, Filter, MoreVertical,
+  Phone, Mail as MailIcon, Calendar, Smile, Paperclip,
+  CornerDownLeft, Wifi, WifiOff, Star, StarOff
 } from 'lucide-react';
 import { fetchAllMessages, deleteMessage, markAsRead } from '../../features/messages/messageSlice';
+import { messageAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
 const AdminMessages = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { messages = [], loading = false, error = null } = useSelector((state) => state.messages || {});
+  const { socket, isConnected } = useSocket();
+  const { userInfo } = useSelector((state) => state.auth);
+  const { messages = [], loading = false } = useSelector((state) => state.messages || {});
+  
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
-  const [selectedMessage, setSelectedMessage] = useState(null);
-  const [showFilters, setShowFilters] = useState(false);
+  const [replyMessage, setReplyMessage] = useState('');
+  const [activeChats, setActiveChats] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [loadingChat, setLoadingChat] = useState(false);
+  const [typingStatus, setTypingStatus] = useState({});
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  
+  const messagesEndRef = useRef(null);
+  const replyInputRef = useRef(null);
 
-  useEffect(() => {
-    dispatch(fetchAllMessages());
-  }, [dispatch]);
+  const fetchActiveChats = useCallback(async () => {
+    try {
+      const { data } = await messageAPI.getConversations();
+      const activeCustomerChats = data.filter(chat => 
+        chat.user?.role === 'user' && chat.lastMessage
+      );
+      setActiveChats(activeCustomerChats);
+    } catch (error) {
+      console.error('Error fetching active chats:', error);
+      setActiveChats([]);
+    }
+  }, []);
 
-  const filteredMessages = Array.isArray(messages) ? messages.filter(message => {
-    const matchesSearch = 
-      message.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      message.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      message.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      message.phone?.includes(searchTerm);
-    
-    const matchesFilter = 
-      filter === 'all' ? true :
-      filter === 'read' ? message.isRead :
-      filter === 'unread' ? !message.isRead : true;
-    
-    return matchesSearch && matchesFilter;
-  }) : [];
-
-  const handleDelete = async (id, name) => {
-    if (window.confirm(`Are you sure you want to delete message from ${name}?`)) {
-      const result = await dispatch(deleteMessage(id));
-      if (deleteMessage.fulfilled.match(result)) {
-        toast.success('Message deleted successfully');
-        if (selectedMessage?._id === id) setSelectedMessage(null);
-      } else {
-        toast.error('Failed to delete message');
+  const fetchChatMessages = useCallback(async (userId) => {
+    setLoadingChat(true);
+    try {
+      const { data } = await messageAPI.getMessages(userId);
+      setChatMessages(Array.isArray(data) ? data : []);
+      scrollToBottom();
+      
+      const unreadMessages = (Array.isArray(data) ? data : []).filter(m => !m.isRead && m.to?._id === userInfo?._id);
+      if (unreadMessages.length > 0) {
+        const messageIds = unreadMessages.map(m => m._id);
+        await messageAPI.markAsRead(messageIds);
+        socket?.emit('mark_read', { messageIds });
+        setChatMessages(prev => prev.map(m => 
+          messageIds.includes(m._id) ? { ...m, isRead: true } : m
+        ));
       }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      setChatMessages([]);
+    } finally {
+      setLoadingChat(false);
     }
+  }, [userInfo, socket]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleMarkAsRead = async (id) => {
-    const result = await dispatch(markAsRead(id));
-    if (markAsRead.fulfilled.match(result)) {
-      toast.success('Message marked as read');
-    }
-  };
+  const handleSelectChat = useCallback(async (chat) => {
+    if (!chat || !chat.user) return;
+    setSelectedChat(chat.user);
+    await fetchChatMessages(chat.user._id);
+  }, [fetchChatMessages]);
 
-  const getStatusColor = (isRead) => {
-    return isRead 
-      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-      : 'bg-amber-50 text-amber-700 border-amber-200';
-  };
+  const handleSendReply = async (e) => {
+    e.preventDefault();
+    if (!replyMessage.trim() || !selectedChat || !socket) return;
 
-  const getStatusIcon = (isRead) => {
-    return isRead ? <CheckCircle className="h-3 w-3" /> : <Clock className="h-3 w-3" />;
-  };
+    const tempId = Date.now();
+    const newMessage = {
+      _id: tempId,
+      from: { _id: userInfo._id, name: userInfo.name, role: userInfo.role },
+      to: { _id: selectedChat._id },
+      message: replyMessage.trim(),
+      messageType: 'text',
+      createdAt: new Date(),
+      isRead: false
+    };
+    
+    setChatMessages(prev => [...prev, newMessage]);
+    setReplyMessage('');
+    scrollToBottom();
 
-  const getStatusText = (isRead) => {
-    return isRead ? 'Read' : 'Unread';
-  };
-
-  const formatDate = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    socket.emit('send_message', {
+      toUserId: selectedChat._id,
+      message: replyMessage.trim(),
+      type: 'text'
     });
   };
 
+  const handleTyping = (e) => {
+    setReplyMessage(e.target.value);
+    if (e.target.value.length > 0 && socket && selectedChat) {
+      socket.emit('typing', { toUserId: selectedChat._id, isTyping: true });
+      setTimeout(() => {
+        if (socket && selectedChat) {
+          socket.emit('typing', { toUserId: selectedChat._id, isTyping: false });
+        }
+      }, 1000);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendReply(e);
+    }
+  };
+
+  useEffect(() => {
+    dispatch(fetchAllMessages());
+    fetchActiveChats();
+  }, [dispatch, fetchActiveChats]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleReceiveMessage = (newMessage) => {
+      if (selectedChat?._id === newMessage.from._id) {
+        setChatMessages(prev => [...prev, newMessage]);
+        scrollToBottom();
+        
+        if (!newMessage.isRead && socket) {
+          socket.emit('mark_read', { messageIds: [newMessage._id] });
+          setChatMessages(prev => prev.map(m => 
+            m._id === newMessage._id ? { ...m, isRead: true } : m
+          ));
+        }
+      }
+      fetchActiveChats();
+      dispatch(fetchAllMessages());
+      
+      if (selectedChat?._id !== newMessage.from._id) {
+        toast.success(`📩 New message from ${newMessage.from.name}`);
+      }
+    };
+
+    const handleUserTyping = (data) => {
+      if (selectedChat?._id === data.from) {
+        setTypingStatus(prev => ({ ...prev, [data.from]: data.isTyping }));
+        setTimeout(() => {
+          setTypingStatus(prev => ({ ...prev, [data.from]: false }));
+        }, 1000);
+      }
+    };
+
+    const handleMessagesRead = (data) => {
+      setChatMessages(prev => prev.map(m => 
+        data.messageIds.includes(m._id) ? { ...m, isRead: true } : m
+      ));
+      fetchActiveChats();
+    };
+
+    const handleActiveUsers = (users) => {
+      setOnlineUsers(Array.isArray(users) ? users : []);
+    };
+
+    socket.on('receive_message', handleReceiveMessage);
+    socket.on('user_typing', handleUserTyping);
+    socket.on('messages_read', handleMessagesRead);
+    socket.on('active_users', handleActiveUsers);
+
+    return () => {
+      socket.off('receive_message', handleReceiveMessage);
+      socket.off('user_typing', handleUserTyping);
+      socket.off('messages_read', handleMessagesRead);
+      socket.off('active_users', handleActiveUsers);
+    };
+  }, [socket, selectedChat, fetchActiveChats, dispatch]);
+
+  const formatTime = (date) => {
+    if (!date) return '';
+    const now = new Date();
+    const msgDate = new Date(date);
+    const diffHours = Math.abs(now - msgDate) / 36e5;
+    
+    if (diffHours < 24) {
+      return msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else {
+      return msgDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  };
+
+  const formatMessageDate = (date, prevDate) => {
+    if (!date) return null;
+    const current = new Date(date).toDateString();
+    const prev = prevDate ? new Date(prevDate).toDateString() : null;
+    
+    if (current !== prev) {
+      const today = new Date().toDateString();
+      const yesterday = new Date(Date.now() - 864e5).toDateString();
+      
+      if (current === today) return 'Today';
+      if (current === yesterday) return 'Yesterday';
+      return new Date(date).toLocaleDateString([], { month: 'long', day: 'numeric' });
+    }
+    return null;
+  };
+
+  const isUserOnline = (userId) => {
+    return Array.isArray(onlineUsers) && onlineUsers.some(u => u.userId === userId);
+  };
+
   const stats = {
-    total: filteredMessages?.length || 0,
-    unread: filteredMessages?.filter(m => !m.isRead).length || 0,
-    read: filteredMessages?.filter(m => m.isRead).length || 0
+    total: activeChats.length,
+    unread: activeChats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0),
+    online: onlineUsers.filter(u => u.userRole === 'user').length
   };
 
-  const clearFilters = () => {
-    setSearchTerm('');
-    setFilter('all');
-    setShowFilters(false);
-  };
-
-  // Stat Card Component
-  const StatCard = ({ title, value, icon: Icon, bgColor, subtitle = '' }) => (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-300 group">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-2">{value}</p>
-          {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
-        </div>
-        <div className={`w-12 h-12 ${bgColor} rounded-xl flex items-center justify-center shadow-md transition-transform group-hover:scale-105`}>
-          <Icon className="h-6 w-6 text-white" />
-        </div>
-      </div>
-    </div>
-  );
-
-  if (loading && !messages.length) {
+  if (loading && !activeChats.length) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-3 border-blue-600 border-t-transparent"></div>
-          <p className="mt-4 text-gray-500">Loading messages...</p>
+          <Loader2 className="h-12 w-12 animate-spin text-indigo-600 mx-auto mb-4" />
+          <p className="text-gray-500">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header Section - Matching AddProduct style */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate('/admin')}
-                className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-500 hover:text-gray-700"
-                aria-label="Go back"
+              <button 
+                onClick={() => navigate('/admin')} 
+                className="p-2 hover:bg-white rounded-xl transition-all duration-200"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-5 w-5 text-gray-600" />
               </button>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Contact Messages</h1>
-                <p className="text-sm text-gray-500 mt-1">View and manage customer inquiries</p>
+                <h1 className="text-2xl font-bold text-gray-900">Support Dashboard</h1>
+                <p className="text-sm text-gray-500 mt-0.5">Manage customer conversations</p>
               </div>
             </div>
-            {/* Status indicator */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-full">
-              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
-              <span className="text-xs text-blue-700 font-medium">{stats.unread} Unread Messages</span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-sm">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+                <span className="text-xs font-medium text-gray-600">
+                  {isConnected ? 'Connected' : 'Connecting...'}
+                </span>
+              </div>
             </div>
-          </div>
-          
-          {/* Breadcrumb - Matching AddProduct style */}
-          <div className="flex items-center gap-2 text-sm text-gray-500 mt-4 ml-12">
-            <span className="hover:text-gray-700 cursor-pointer" onClick={() => navigate('/admin')}>Dashboard</span>
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            <span className="text-gray-900 font-medium">Messages</span>
           </div>
         </div>
 
-        {/* Stats Overview - Matching card style */}
-        {filteredMessages.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
-            <StatCard 
-              title="Total Messages" 
-              value={stats.total} 
-              icon={MessageSquare} 
-              bgColor="bg-gradient-to-r from-blue-600 to-blue-700"
-              subtitle="All customer inquiries"
-            />
-            <StatCard 
-              title="Unread" 
-              value={stats.unread} 
-              icon={Mail} 
-              bgColor="bg-gradient-to-r from-amber-500 to-amber-600"
-              subtitle="Awaiting response"
-            />
-            <StatCard 
-              title="Read" 
-              value={stats.read} 
-              icon={CheckCircle} 
-              bgColor="bg-gradient-to-r from-emerald-500 to-emerald-600"
-              subtitle="Already reviewed"
-            />
-          </div>
-        )}
-      
-        {/* Search and Filter Card - Matching AddProduct style */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden hover:shadow-md transition-shadow duration-300">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
-                <Inbox className="h-5 w-5 text-white" />
-              </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Message Inbox</h2>
-                <p className="text-xs text-gray-500">Search, filter and manage customer messages</p>
+                <p className="text-sm text-gray-500">Active Conversations</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <MessageSquare className="h-6 w-6 text-blue-600" />
               </div>
             </div>
           </div>
-          
-          <div className="p-6">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by name, email, phone, or message..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
-                />
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Unread Messages</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.unread}</p>
               </div>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`px-5 py-3 rounded-xl transition-all duration-200 flex items-center gap-2 font-medium ${
-                  showFilters 
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md' 
-                    : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <Filter className="h-4 w-4" />
-                <span>Filters</span>
-                {filter !== 'all' && (
-                  <span className="ml-1 bg-white text-blue-600 text-xs px-1.5 py-0.5 rounded-full">1</span>
-                )}
-              </button>
+              <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                <Mail className="h-6 w-6 text-amber-600" />
+              </div>
             </div>
-            
-            {/* Expanded Filters */}
-            {showFilters && (
-              <div className="mt-5 pt-5 border-t border-gray-100">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Status Filter</label>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { value: 'all', label: 'All Messages', icon: Inbox },
-                        { value: 'unread', label: 'Unread', icon: Clock },
-                        { value: 'read', label: 'Read', icon: CheckCircle }
-                      ].map(option => {
-                        const Icon = option.icon;
-                        return (
-                          <button
-                            key={option.value}
-                            onClick={() => setFilter(option.value)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                              filter === option.value
-                                ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-sm'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                          >
-                            <Icon className="h-3.5 w-3.5" />
-                            {option.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div className="flex items-end">
-                    {(searchTerm || filter !== 'all') && (
-                      <button
-                        onClick={clearFilters}
-                        className="px-4 py-2 text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
-                      >
-                        Clear all filters
-                      </button>
-                    )}
-                  </div>
-                </div>
+          </div>
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Online Customers</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.online}</p>
               </div>
-            )}
+              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                <Users className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
           </div>
         </div>
-      
-        {/* Messages Grid */}
-        {filteredMessages.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
-            <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail className="h-12 w-12 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No messages found</h3>
-            <p className="text-sm text-gray-500">
-              {searchTerm || filter !== 'all' 
-                ? 'Try adjusting your search or filters' 
-                : 'No contact messages received yet'}
-            </p>
-            {(searchTerm || filter !== 'all') && (
-              <button onClick={clearFilters} className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium">
-                Clear all filters
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredMessages.map((message) => (
-              <div 
-                key={message._id} 
-                className={`bg-white rounded-2xl shadow-sm border overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer ${
-                  !message.isRead ? 'border-l-4 border-l-amber-500 border-gray-200' : 'border-gray-200'
-                }`}
-                onClick={() => setSelectedMessage(selectedMessage?._id === message._id ? null : message)}
-              >
-                <div className="p-6">
-                  {/* Header */}
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-semibold text-base shadow-md">
-                          {message.name?.charAt(0).toUpperCase() || '?'}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{message.name || 'Unknown'}</h3>
-                          <p className="text-xs text-gray-500">{message.email || 'No email'}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(message.isRead)}`}>
-                        {getStatusIcon(message.isRead)}
-                        {getStatusText(message.isRead)}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Message Preview */}
-                  <div className="mb-4">
-                    <p className="text-gray-600 text-sm line-clamp-2">
-                      {message.message || 'No message content'}
-                    </p>
-                  </div>
-                  
-                  {/* Details */}
-                  <div className="space-y-1.5 mb-4">
-                    {message.phone && (
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <div className="w-5 h-5 bg-green-100 rounded-lg flex items-center justify-center">
-                          <Phone className="h-3 w-3 text-green-600" />
-                        </div>
-                        <span>{message.phone}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <div className="w-5 h-5 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <Calendar className="h-3 w-3 text-gray-600" />
-                      </div>
-                      <span>{formatDate(message.createdAt)}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Actions */}
-                  <div className="flex gap-3 pt-3 border-t border-gray-100">
-                    {!message.isRead && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMarkAsRead(message._id);
-                        }}
-                        className="flex-1 px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                        Mark as Read
-                      </button>
-                    )}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(message._id, message.name);
-                      }}
-                      className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </button>
-                  </div>
+
+        {/* Main Chat Interface */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+          <div className="flex h-[620px]">
+            {/* Sidebar - Active Chats */}
+            <div className={`${isSidebarOpen ? 'w-80' : 'w-0'} border-r border-gray-100 flex flex-col transition-all duration-300 overflow-hidden`}>
+              <div className="p-4 border-b border-gray-100 bg-gray-50/50">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                    <Users className="h-4 w-4 text-indigo-600" />
+                    Conversations
+                  </h3>
+                  <button 
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="p-1 hover:bg-gray-200 rounded-lg transition-colors lg:hidden"
+                  >
+                    <MoreVertical className="h-4 w-4 text-gray-500" />
+                  </button>
                 </div>
-                
-                {/* Expanded Message Details */}
-                {selectedMessage?._id === message._id && (
-                  <div className="border-t border-gray-100 bg-gradient-to-br from-gray-50 to-white p-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-7 h-7 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <MessageSquare className="h-4 w-4 text-purple-600" />
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Search customers..." 
+                    value={searchTerm} 
+                    onChange={(e) => setSearchTerm(e.target.value)} 
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" 
+                  />
+                </div>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto">
+                {activeChats.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <MessageSquare className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                    <p className="text-sm text-gray-500">No active conversations</p>
+                    <p className="text-xs text-gray-400 mt-1">Customer messages will appear here</p>
+                  </div>
+                ) : (
+                  activeChats.map((chat) => (
+                    <button 
+                      key={chat.user?._id} 
+                      onClick={() => handleSelectChat(chat)} 
+                      className={`w-full p-4 text-left hover:bg-gray-50 transition-all border-b border-gray-50 ${
+                        selectedChat?._id === chat.user?._id ? 'bg-indigo-50/50 border-l-4 border-l-indigo-500' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative flex-shrink-0">
+                          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold shadow-sm">
+                            {chat.user?.name?.charAt(0).toUpperCase() || '?'}
+                          </div>
+                          {isUserOnline(chat.user?._id) && (
+                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start">
+                            <p className="font-medium text-gray-900 truncate text-sm">{chat.user?.name || 'Unknown'}</p>
+                            <span className="text-xs text-gray-400 flex-shrink-0 ml-2">{formatTime(chat.lastMessageTime)}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 truncate mt-0.5">{chat.lastMessage?.substring(0, 50) || 'No messages'}</p>
+                        </div>
+                        {chat.unreadCount > 0 && (
+                          <span className="bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center">
+                            {chat.unreadCount}
+                          </span>
+                        )}
                       </div>
-                      <h4 className="font-semibold text-gray-800">Full Message</h4>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Main Chat Area */}
+            <div className="flex-1 flex flex-col">
+              {selectedChat ? (
+                <>
+                  {/* Chat Header */}
+                  <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors lg:hidden"
+                      >
+                        <Users className="h-4 w-4 text-gray-500" />
+                      </button>
+                      <div className="relative">
+                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold shadow-sm">
+                          {selectedChat.name?.charAt(0).toUpperCase() || '?'}
+                        </div>
+                        {isUserOnline(selectedChat._id) && (
+                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{selectedChat.name || 'Customer'}</h3>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {isUserOnline(selectedChat._id) ? (
+                            <>
+                              <UserCheck className="h-3 w-3 text-green-600" />
+                              <span className="text-xs text-green-600">Online</span>
+                            </>
+                          ) : (
+                            <>
+                              <UserX className="h-3 w-3 text-gray-400" />
+                              <span className="text-xs text-gray-400">Offline</span>
+                            </>
+                          )}
+                          {selectedChat.email && (
+                            <>
+                              <span className="text-xs text-gray-300">•</span>
+                              <span className="text-xs text-gray-500">{selectedChat.email}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap bg-white p-4 rounded-xl border border-gray-100">
-                      {message.message}
-                    </p>
-                    
-                    <div className="mt-4 pt-4 border-t border-gray-100">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-7 h-7 bg-indigo-100 rounded-lg flex items-center justify-center">
-                          <User className="h-4 w-4 text-indigo-600" />
-                        </div>
-                        <h4 className="font-semibold text-gray-800">Contact Details</h4>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white rounded-lg shadow-sm">
+                        <Wifi className={`h-3 w-3 ${isConnected ? 'text-green-500' : 'text-gray-400'}`} />
+                        <span className="text-xs text-gray-600">
+                          {isConnected ? 'Real-time' : 'Reconnecting...'}
+                        </span>
                       </div>
-                      <div className="space-y-2 text-sm bg-white p-4 rounded-xl border border-gray-100">
-                        <div className="flex flex-wrap gap-2">
-                          <span className="font-medium text-gray-600 min-w-[80px]">Name:</span>
-                          <span className="text-gray-800">{message.name}</span>
+                    </div>
+                  </div>
+
+                  {/* Messages Area */}
+                  <div className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-gray-50 to-white">
+                    {loadingChat ? (
+                      <div className="flex justify-center py-12">
+                        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+                      </div>
+                    ) : chatMessages.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full">
+                        <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+                          <MessageSquare className="h-10 w-10 text-indigo-600" />
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="font-medium text-gray-600 min-w-[80px]">Email:</span>
-                          <span className="text-gray-800 break-all">{message.email}</span>
-                        </div>
-                        {message.phone && (
-                          <div className="flex flex-wrap gap-2">
-                            <span className="font-medium text-gray-600 min-w-[80px]">Phone:</span>
-                            <span className="text-gray-800">{message.phone}</span>
+                        <h4 className="text-lg font-medium text-gray-700 mb-1">No messages yet</h4>
+                        <p className="text-sm text-gray-500">Send a message to start the conversation</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 max-w-3xl mx-auto">
+                        {chatMessages.map((msg, idx) => {
+                          const dateHeader = formatMessageDate(msg.createdAt, chatMessages[idx - 1]?.createdAt);
+                          return (
+                            <React.Fragment key={msg._id || idx}>
+                              {dateHeader && (
+                                <div className="flex justify-center my-4">
+                                  <div className="px-3 py-1 bg-gray-100 rounded-full">
+                                    <span className="text-xs font-medium text-gray-500">{dateHeader}</span>
+                                  </div>
+                                </div>
+                              )}
+                              <div className={`flex ${msg.from?._id === userInfo?._id ? 'justify-end' : 'justify-start'}`}>
+                                {msg.from?._id !== userInfo?._id && (
+                                  <div className="flex-shrink-0 mr-2">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-sm">
+                                      <span className="text-white text-xs font-bold">
+                                        {selectedChat.name?.charAt(0).toUpperCase() || 'C'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+                                <div className={`max-w-[70%] group`}>
+                                  <div className={`rounded-2xl px-4 py-2.5 shadow-sm ${
+                                    msg.from?._id === userInfo?._id 
+                                      ? 'bg-indigo-600 text-white rounded-br-sm' 
+                                      : 'bg-white text-gray-800 rounded-bl-sm border border-gray-100'
+                                  }`}>
+                                    <p className="text-sm leading-relaxed break-words">{msg.message}</p>
+                                    <div className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${
+                                      msg.from?._id === userInfo?._id ? 'text-indigo-200' : 'text-gray-400'
+                                    }`}>
+                                      <Clock className="h-2.5 w-2.5" />
+                                      <span>{formatTime(msg.createdAt)}</span>
+                                      {msg.from?._id === userInfo?._id && (
+                                        <CheckCheck className={`h-3 w-3 ${msg.isRead ? 'text-green-400' : 'text-indigo-300'}`} />
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </React.Fragment>
+                          );
+                        })}
+                        {typingStatus[selectedChat._id] && (
+                          <div className="flex justify-start">
+                            <div className="flex-shrink-0 mr-2">
+                              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center shadow-sm">
+                                <span className="text-white text-xs font-bold">C</span>
+                              </div>
+                            </div>
+                            <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-gray-100">
+                              <div className="flex gap-1.5">
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                              </div>
+                            </div>
                           </div>
                         )}
-                        <div className="flex flex-wrap gap-2">
-                          <span className="font-medium text-gray-600 min-w-[80px]">Received:</span>
-                          <span className="text-gray-800">{formatDate(message.createdAt)}</span>
+                        <div ref={messagesEndRef} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Reply Input */}
+                  <div className="p-4 bg-white border-t border-gray-100">
+                    <form onSubmit={handleSendReply}>
+                      <div className="flex items-end gap-2">
+                        <div className="flex-1 relative">
+                          <textarea
+                            ref={replyInputRef}
+                            value={replyMessage}
+                            onChange={handleTyping}
+                            onKeyPress={handleKeyPress}
+                            placeholder={`Reply to ${selectedChat.name || 'customer'}...`}
+                            rows="1"
+                            className="w-full px-4 py-2.5 pr-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none text-sm transition-all"
+                            style={{ maxHeight: '100px' }}
+                          />
+                          <button
+                            type="button"
+                            className="absolute right-2 bottom-2 p-1.5 text-gray-400 hover:text-indigo-600 transition-colors"
+                          >
+                            <Smile className="h-5 w-5" />
+                          </button>
+                        </div>
+                        <button 
+                          type="submit" 
+                          disabled={!replyMessage.trim()} 
+                          className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white w-10 h-10 rounded-xl flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                        >
+                          <Send className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between mt-2 px-1">
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                            <CornerDownLeft className="h-3 w-3" />
+                            Press Enter to send
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></div>
+                          <span className="text-[10px] text-gray-400">
+                            {isConnected ? 'Connected' : 'Reconnecting...'}
+                          </span>
                         </div>
                       </div>
-                    </div>
+                    </form>
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Tips Card - Matching AddProduct style */}
-        <div className="mt-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-100">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-              <AlertCircle className="h-4 w-4 text-white" />
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-900 text-sm">Message Management Tips</h4>
-              <ul className="text-xs text-gray-700 mt-2 space-y-1.5">
-                <li className="flex items-start gap-1">
-                  <span className="text-blue-500">•</span>
-                  <span>Mark messages as read after reviewing to keep track</span>
-                </li>
-                <li className="flex items-start gap-1">
-                  <span className="text-blue-500">•</span>
-                  <span>Respond to customer inquiries within 24 hours</span>
-                </li>
-                <li className="flex items-start gap-1">
-                  <span className="text-blue-500">•</span>
-                  <span>Delete spam or irrelevant messages to keep inbox clean</span>
-                </li>
-                <li className="flex items-start gap-1">
-                  <span className="text-blue-500">•</span>
-                  <span>Use filters to focus on unread messages first</span>
-                </li>
-              </ul>
+                </>
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <MessageSquare className="h-12 w-12 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-700 mb-1">Select a conversation</h3>
+                    <p className="text-sm text-gray-500">Choose a customer from the sidebar to start chatting</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
