@@ -36,12 +36,14 @@ import ManageOrderUserSide from './pages/user/ManageOrderUserSide';
 import EditProduct from './pages/admin/EditProduct';
 import OrderDetails from './pages/admin/OrderDetails';
 import Settings from './pages/Settings';
+import { SocketProvider } from './context/SocketContext';
 
 function App() {
   const { userInfo } = useSelector((state) => state.auth);
 
   return (
     <Router>
+      <SocketProvider>
       <Navbar />
       <Routes>
         {/* Public Routes */}
@@ -79,7 +81,9 @@ function App() {
         <Route path="/admin/users" element={userInfo?.role === 'admin' ? <Users /> : <Navigate to="/" />} />
         <Route path='/admin/messages' element={userInfo?.role == 'admin' ? <AdminMessages /> : <Navigate to="/" />} />
       </Routes>
+      </ SocketProvider>
       <Footer />
+      
     </Router>
   );
 }

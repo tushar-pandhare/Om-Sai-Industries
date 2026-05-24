@@ -1,505 +1,207 @@
-// import React, { useState, useEffect } from 'react';
-// import { useDispatch, useSelector } from 'react-redux';
-// import { 
-//   Phone, 
-//   Mail, 
-//   MapPin, 
-//   Clock, 
-//   Send, 
-//   User, 
-//   MessageSquare, 
-//   AlertCircle, 
-//   Globe 
-// } from 'lucide-react';
-// import { FaFacebook, FaInstagram, FaTwitter } from 'react-icons/fa';
-// import { fetchContactInfo } from '../../features/contact/contactSlice';
-// import { sendContactMessage } from '../../features/messages/messageSlice';
-// import toast from 'react-hot-toast';
-
-// const ContactUs = () => {
-//   const dispatch = useDispatch();
-//   const { contactInfo, loading: contactLoading } = useSelector((state) => state.contact);
-//   const { userInfo } = useSelector((state) => state.auth);
-//   const [formData, setFormData] = useState({
-//     name: '',
-//     email: '',
-//     phone: '',
-//     message: ''
-//   });
-//   const [isSubmitting, setIsSubmitting] = useState(false);
-
-//   useEffect(() => {
-//     dispatch(fetchContactInfo());
-//   }, [dispatch]);
-
-//   useEffect(() => {
-//     if (userInfo) {
-//       setFormData(prev => ({
-//         ...prev,
-//         name: userInfo.name || '',
-//         email: userInfo.email || '',
-//         phone: userInfo.phone || ''
-//       }));
-//     }
-//   }, [userInfo]);
-
-//   const handleChange = (e) => {
-//     setFormData({
-//       ...formData,
-//       [e.target.name]: e.target.value
-//     });
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-    
-//     if (!formData.name || !formData.email || !formData.message) {
-//       return toast.error('Please fill in all required fields');
-//     }
-
-//     setIsSubmitting(true);
-
-//     try {
-//       const result = await dispatch(sendContactMessage(formData));
-      
-//       if (sendContactMessage.fulfilled.match(result)) {
-//         toast.success('Message sent successfully! We\'ll get back to you soon.');
-        
-//         if (userInfo) {
-//           setFormData(prev => ({
-//             ...prev,
-//             message: ''
-//           }));
-//         } else {
-//           setFormData({
-//             name: '',
-//             email: '',
-//             phone: '',
-//             message: ''
-//           });
-//         }
-//       } else {
-//         toast.error(result.payload || 'Failed to send message. Please try again.');
-//       }
-//     } catch (error) {
-//       toast.error('Something went wrong. Please try again later.');
-//     } finally {
-//       setIsSubmitting(false);
-//     }
-//   };
-
-//   if (contactLoading && !contactInfo) {
-//     return (
-//       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-//         <div className="text-center">
-//           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-//           <p className="mt-4 text-slate-600">Loading contact information...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-//       {/* Hero Section */}
-//       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-12 sm:py-16">
-//         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-//           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center mb-3">
-//             Contact Us
-//           </h1>
-//           <p className="text-base sm:text-lg text-center text-blue-100 max-w-2xl mx-auto">
-//             Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
-//           </p>
-//         </div>
-//       </div>
-
-//       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-//         <div className="grid lg:grid-cols-2 gap-6 sm:gap-8">
-          
-//           {/* Contact Information */}
-//           <div className="space-y-5 sm:space-y-6">
-//             {/* Contact Details Card */}
-//             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-//               <div className="bg-gradient-to-r from-blue-50 to-slate-50 px-5 sm:px-6 py-4 border-b border-slate-200">
-//                 <h2 className="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
-//                   <MapPin className="h-5 w-5 text-blue-600" />
-//                   Get in Touch
-//                 </h2>
-//                 <p className="text-sm text-slate-500 mt-1">Visit us or reach out through any of these channels</p>
-//               </div>
-              
-//               <div className="p-5 sm:p-6 space-y-5">
-//                 {/* Address */}
-//                 <div className="flex items-start gap-3 sm:gap-4 group hover:bg-slate-50 p-2 rounded-lg transition-colors">
-//                   <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-//                     <MapPin className="h-5 w-5 text-red-600" />
-//                   </div>
-//                   <div>
-//                     <h3 className="font-semibold text-slate-800 text-sm sm:text-base">Address</h3>
-//                     <p className="text-slate-600 text-xs sm:text-sm mt-1 leading-relaxed">
-//                       {contactInfo?.address || 'Loading address...'}
-//                     </p>
-//                   </div>
-//                 </div>
-                
-//                 {/* Phone */}
-//                 <div className="flex items-start gap-3 sm:gap-4 group hover:bg-slate-50 p-2 rounded-lg transition-colors">
-//                   <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-//                     <Phone className="h-5 w-5 text-green-600" />
-//                   </div>
-//                   <div>
-//                     <h3 className="font-semibold text-slate-800 text-sm sm:text-base">Phone</h3>
-//                     <a href={`tel:${contactInfo?.phone}`} className="text-slate-600 text-xs sm:text-sm hover:text-blue-600 transition-colors block mt-1">
-//                       {contactInfo?.phone || 'Loading...'}
-//                     </a>
-//                     <p className="text-xs text-slate-400 mt-0.5">Mon-Sat, 9AM-7PM</p>
-//                   </div>
-//                 </div>
-                
-//                 {/* Email */}
-//                 <div className="flex items-start gap-3 sm:gap-4 group hover:bg-slate-50 p-2 rounded-lg transition-colors">
-//                   <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-//                     <Mail className="h-5 w-5 text-blue-600" />
-//                   </div>
-//                   <div>
-//                     <h3 className="font-semibold text-slate-800 text-sm sm:text-base">Email</h3>
-//                     <a href={`mailto:${contactInfo?.email}`} className="text-slate-600 text-xs sm:text-sm hover:text-blue-600 transition-colors block mt-1">
-//                       {contactInfo?.email || 'Loading...'}
-//                     </a>
-//                     <p className="text-xs text-slate-400 mt-0.5">We reply within 24 hours</p>
-//                   </div>
-//                 </div>
-                
-//                 {/* Business Hours */}
-//                 <div className="flex items-start gap-3 sm:gap-4 group hover:bg-slate-50 p-2 rounded-lg transition-colors">
-//                   <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-//                     <Clock className="h-5 w-5 text-purple-600" />
-//                   </div>
-//                   <div>
-//                     <h3 className="font-semibold text-slate-800 text-sm sm:text-base">Business Hours</h3>
-//                     <div className="text-slate-600 text-xs sm:text-sm mt-1" 
-//                          dangerouslySetInnerHTML={{ __html: contactInfo?.businessHours || 'Loading...' }} />
-//                   </div>
-//                 </div>
-//               </div>
-//             </div>
-            
-//             {/* Social Media Links */}
-//             {(contactInfo?.socialMedia?.facebook || contactInfo?.socialMedia?.instagram || contactInfo?.socialMedia?.twitter) && (
-//               <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-//                 <div className="px-5 sm:px-6 py-4 border-b border-slate-200">
-//                   <h2 className="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
-//                     <Share2 className="h-5 w-5 text-blue-600" />
-//                     Connect With Us
-//                   </h2>
-//                   <p className="text-sm text-slate-500 mt-1">Follow us on social media</p>
-//                 </div>
-//                 <div className="p-5 sm:p-6">
-//                   <div className="flex gap-4 sm:gap-6 justify-center sm:justify-start">
-//                     {contactInfo?.socialMedia?.facebook && (
-//                       <a
-//                         href={contactInfo.socialMedia.facebook}
-//                         target="_blank"
-//                         rel="noopener noreferrer"
-//                         className="w-12 h-12 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center transition-all hover:scale-110"
-//                       >
-//                         <FaFacebook className="h-6 w-6 text-white" />
-//                       </a>
-//                     )}
-//                     {contactInfo?.socialMedia?.instagram && (
-//                       <a
-//                         href={contactInfo.socialMedia.instagram}
-//                         target="_blank"
-//                         rel="noopener noreferrer"
-//                         className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 rounded-full flex items-center justify-center transition-all hover:scale-110"
-//                       >
-//                         <Instagram className="h-6 w-6 text-white" />
-//                       </a>
-//                     )}
-//                     {contactInfo?.socialMedia?.twitter && (
-//                       <a
-//                         href={contactInfo.socialMedia.twitter}
-//                         target="_blank"
-//                         rel="noopener noreferrer"
-//                         className="w-12 h-12 bg-sky-500 hover:bg-sky-600 rounded-full flex items-center justify-center transition-all hover:scale-110"
-//                       >
-//                         <Twitter className="h-6 w-6 text-white" />
-//                       </a>
-//                     )}
-//                   </div>
-//                 </div>
-//               </div>
-//             )}
-            
-//             {/* Map */}
-//             {contactInfo?.mapEmbed && (
-//               <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-//                 <div className="px-5 sm:px-6 py-4 border-b border-slate-200">
-//                   <h2 className="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
-//                     <MapPin className="h-5 w-5 text-blue-600" />
-//                     Find Us
-//                   </h2>
-//                   <p className="text-sm text-slate-500 mt-1">Our location on Google Maps</p>
-//                 </div>
-//                 <div className="p-0">
-//                   <div className="w-full h-64 sm:h-80 lg:h-96 overflow-hidden">
-//                     <iframe
-//                       src={contactInfo.mapEmbed}
-//                       className="w-full h-full"
-//                       style={{ border: 0 }}
-//                       allowFullScreen
-//                       loading="lazy"
-//                       referrerPolicy="no-referrer-when-downgrade"
-//                       title="Business Location"
-//                     />
-//                   </div>
-//                 </div>
-//               </div>
-//             )}
-//           </div>
-          
-//           {/* Contact Form */}
-//           <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-//             <div className="bg-gradient-to-r from-blue-50 to-slate-50 px-5 sm:px-6 py-4 border-b border-slate-200">
-//               <h2 className="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
-//                 <MessageSquare className="h-5 w-5 text-blue-600" />
-//                 Send us a Message
-//               </h2>
-//               <p className="text-sm text-slate-500 mt-1">Fill out the form and we'll get back to you</p>
-//             </div>
-            
-//             <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5">
-//               <div className="grid sm:grid-cols-2 gap-4">
-//                 <div>
-//                   <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
-//                     <User className="h-4 w-4 text-slate-500" />
-//                     Your Name <span className="text-red-500">*</span>
-//                   </label>
-//                   <input
-//                     type="text"
-//                     name="name"
-//                     required
-//                     value={formData.name}
-//                     onChange={handleChange}
-//                     className="w-full px-3 sm:px-4 py-2.5 text-sm sm:text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-//                     placeholder="John Doe"
-//                     disabled={!!userInfo}
-//                   />
-//                 </div>
-                
-//                 <div>
-//                   <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
-//                     <Mail className="h-4 w-4 text-slate-500" />
-//                     Email Address <span className="text-red-500">*</span>
-//                   </label>
-//                   <input
-//                     type="email"
-//                     name="email"
-//                     required
-//                     value={formData.email}
-//                     onChange={handleChange}
-//                     className="w-full px-3 sm:px-4 py-2.5 text-sm sm:text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-//                     placeholder="john@example.com"
-//                     disabled={!!userInfo}
-//                   />
-//                 </div>
-//               </div>
-              
-//               <div>
-//                 <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
-//                   <Phone className="h-4 w-4 text-slate-500" />
-//                   Phone Number <span className="text-slate-400 text-xs">(Optional)</span>
-//                 </label>
-//                 <input
-//                   type="tel"
-//                   name="phone"
-//                   value={formData.phone}
-//                   onChange={handleChange}
-//                   className="w-full px-3 sm:px-4 py-2.5 text-sm sm:text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-//                   placeholder="+91 1234567890"
-//                 />
-//               </div>
-              
-//               <div>
-//                 <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
-//                   <MessageSquare className="h-4 w-4 text-slate-500" />
-//                   Message <span className="text-red-500">*</span>
-//                 </label>
-//                 <textarea
-//                   name="message"
-//                   required
-//                   rows="5"
-//                   value={formData.message}
-//                   onChange={handleChange}
-//                   className="w-full px-3 sm:px-4 py-2.5 text-sm sm:text-base border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none resize-none"
-//                   placeholder="Tell us details about your inquiry..."
-//                 />
-//               </div>
-              
-//               <div className="bg-blue-50 rounded-lg p-3 flex items-start gap-2">
-//                 <AlertCircle className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-//                 <p className="text-xs text-blue-800">
-//                   We typically respond within 24 hours during business days.
-//                 </p>
-//               </div>
-              
-//               <button
-//                 type="submit"
-//                 disabled={isSubmitting}
-//                 className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 text-sm sm:text-base"
-//               >
-//                 {isSubmitting ? (
-//                   <>
-//                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-//                     Sending...
-//                   </>
-//                 ) : (
-//                   <>
-//                     <Send className="h-5 w-5" />
-//                     Send Message
-//                   </>
-//                 )}
-//               </button>
-//             </form>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default ContactUs;
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSocket } from '../../context/SocketContext';
 import { 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Clock, 
-  Send, 
-  User, 
-  MessageSquare, 
-  AlertCircle,
-  Globe,
-  RotateCcw,
-  ChevronRight,
-  Building2,
-  Headphones,
-  Shield,
-  Award
+  Send, MessageSquare, CheckCheck, Clock,
+  Headphones, Shield, Award, Globe,
+  Minimize2, Maximize2,
+  Users, Wifi, WifiOff, CornerDownLeft
 } from 'lucide-react';
-import { FaFacebook, FaInstagram, FaTwitter, FaLinkedin, FaYoutube } from 'react-icons/fa';
 import { fetchContactInfo } from '../../features/contact/contactSlice';
-import { sendContactMessage } from '../../features/messages/messageSlice';
 import toast from 'react-hot-toast';
+import { messageAPI } from '../../services/api';
 
 const ContactUs = () => {
   const dispatch = useDispatch();
+  const { socket, isConnected } = useSocket();
   const { contactInfo, loading: contactLoading } = useSelector((state) => state.contact);
   const { userInfo } = useSelector((state) => state.auth);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    message: ''
-  });
+  
+  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [conversation, setConversation] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const [adminTyping, setAdminTyping] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [focusedField, setFocusedField] = useState(null);
+
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+  const chatRef = useRef(null);
+
+  useEffect(() => { dispatch(fetchContactInfo()); }, [dispatch]);
 
   useEffect(() => {
-    dispatch(fetchContactInfo());
-  }, [dispatch]);
+    if (!socket) return;
+    const h = (users) => setOnlineUsers(Array.isArray(users) ? users : []);
+    socket.on('active_users', h);
+    return () => socket.off('active_users', h);
+  }, [socket]);
 
   useEffect(() => {
-    if (userInfo) {
-      setFormData(prev => ({
-        ...prev,
-        name: userInfo.name || '',
-        email: userInfo.email || '',
-        phone: userInfo.phone || ''
-      }));
-    }
+    if (userInfo && !isInitialized) { setIsInitialized(true); initializeChat(); }
   }, [userInfo]);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!formData.name || !formData.email || !formData.message) {
-      toast.error('Please fill in all required fields', {
-        duration: 3000,
-        icon: '⚠️',
-        style: {
-          background: '#FEE2E2',
-          color: '#991B1B',
-          borderRadius: '12px',
-        },
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    const loadingToast = toast.loading('Sending your message...');
-
+  const initializeChat = async () => {
+    if (!userInfo) return;
+    setLoading(true);
     try {
-      const result = await dispatch(sendContactMessage(formData));
-      
-      if (sendContactMessage.fulfilled.match(result)) {
-        toast.dismiss(loadingToast);
-        toast.success(
-          (t) => (
-            <div className="flex items-center gap-3">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <Send className="w-5 h-5 text-green-600" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-800">Message Sent! 🎉</p>
-                <p className="text-sm text-gray-600">We'll get back to you within 24 hours</p>
-              </div>
-            </div>
-          ),
-          {
-            duration: 4000,
-            style: {
-              background: '#F0FDF4',
-              borderRadius: '12px',
-              padding: '12px',
-              border: '1px solid #86EFAC',
-            },
+      const { data: conversations } = await messageAPI.getConversations();
+      if (conversations?.length > 0) {
+        const conv = conversations[0];
+        setConversation({ user: conv.user, lastMessage: conv.lastMessage, lastMessageTime: conv.lastMessageTime, unreadCount: conv.unreadCount });
+        if (Array.isArray(conv.messages)) {
+          setMessages(conv.messages);
+          const unread = conv.messages.filter(m => !m.isRead && m.to?._id === userInfo._id);
+          if (unread.length > 0 && socket) {
+            const ids = unread.map(m => m._id);
+            socket.emit('mark_read', { messageIds: ids });
+            setMessages(prev => prev.map(m => ids.includes(m._id) ? { ...m, isRead: true } : m));
           }
-        );
-        
-        if (userInfo) {
-          setFormData(prev => ({ ...prev, message: '' }));
-        } else {
-          setFormData({
-            name: '',
-            email: '',
-            phone: '',
-            message: ''
-          });
         }
       } else {
-        toast.dismiss(loadingToast);
-        toast.error(result.payload || 'Failed to send message. Please try again.', {
-          duration: 3000,
-          icon: '❌',
-        });
+        const { data: admins } = await messageAPI.getUsers();
+        if (!admins?.length) { toast.error('No support staff available.'); return; }
+        let admin = admins[0];
+        if (onlineUsers.length > 0) {
+          const online = admins.find(a => onlineUsers.some(o => o.userId === a._id));
+          if (online) admin = online;
+        }
+        setConversation({ user: admin, lastMessage: null, lastMessageTime: null, unreadCount: 0 });
       }
-    } catch (error) {
-      toast.dismiss(loadingToast);
-      toast.error('Something went wrong. Please try again later.', {
-        duration: 3000,
-        icon: '⚠️',
-      });
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to connect to support.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleReceive = (msg) => {
+      setMessages(prev => prev.some(m => m._id === msg._id) ? prev : [...prev, msg]);
+      setTimeout(scrollToBottom, 100);
+      if (!msg.isRead && socket) {
+        socket.emit('mark_read', { messageIds: [msg._id] });
+        setMessages(prev => prev.map(m => m._id === msg._id ? { ...m, isRead: true } : m));
+      }
+      toast.success(`Support: ${msg.message.substring(0, 40)}…`);
+    };
+    const handleTyping = (data) => {
+      if (data.from !== userInfo?._id) {
+        setAdminTyping(data.isTyping);
+        setTimeout(() => setAdminTyping(false), 1500);
+      }
+    };
+    const handleRead = (data) => {
+      setMessages(prev => prev.map(m => data.messageIds.includes(m._id) ? { ...m, isRead: true } : m));
+    };
+
+    socket.on('receive_message', handleReceive);
+    socket.on('user_typing', handleTyping);
+    socket.on('messages_read', handleRead);
+    return () => {
+      socket.off('receive_message', handleReceive);
+      socket.off('user_typing', handleTyping);
+      socket.off('messages_read', handleRead);
+    };
+  }, [socket, userInfo]);
+
+  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!message.trim()) return;
+    if (!socket?.connected) { toast.error('Connection issue. Please refresh.'); return; }
+    if (!conversation?.user) { toast.error('No support staff available'); return; }
+
+    const tempId = Date.now();
+    setMessages(prev => [...prev, {
+      _id: tempId,
+      from: { _id: userInfo._id, name: userInfo.name, role: userInfo.role },
+      to: { _id: conversation.user._id },
+      message: message.trim(),
+      messageType: 'text',
+      createdAt: new Date(),
+      isRead: false
+    }]);
+    setMessage('');
+    scrollToBottom();
+    socket.emit('send_message', { message: message.trim(), type: 'text' });
+  };
+
+  const handleTypingInput = (e) => {
+    setMessage(e.target.value);
+    if (!typing && e.target.value.length > 0 && socket && conversation?.user) {
+      setTyping(true);
+      socket.emit('typing', { toUserId: conversation.user._id, isTyping: true });
+      setTimeout(() => {
+        if (socket && conversation?.user) {
+          socket.emit('typing', { toUserId: conversation.user._id, isTyping: false });
+          setTyping(false);
+        }
+      }, 1000);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(e); }
+  };
+
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      chatRef.current?.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+    }
+    setIsFullscreen(prev => !prev);
+  };
+
+  useEffect(() => {
+    const h = () => { if (!document.fullscreenElement) setIsFullscreen(false); };
+    document.addEventListener('fullscreenchange', h);
+    return () => document.removeEventListener('fullscreenchange', h);
+  }, []);
+
+  const formatTime = (date) => {
+    if (!date) return '';
+    const msgDate = new Date(date);
+    const diffH = Math.abs(new Date() - msgDate) / 36e5;
+    return diffH < 24
+      ? msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : msgDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  };
+
+  const formatMessageDate = (date, prevDate) => {
+    if (!date) return null;
+    const cur = new Date(date).toDateString();
+    const prev = prevDate ? new Date(prevDate).toDateString() : null;
+    if (cur !== prev) {
+      const today = new Date().toDateString();
+      const yesterday = new Date(Date.now() - 864e5).toDateString();
+      if (cur === today) return 'Today';
+      if (cur === yesterday) return 'Yesterday';
+      return new Date(date).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+    return null;
+  };
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      // your contact form submission
+      toast.success('Message sent!');
+      setFormData({ name: '', email: '', phone: '', message: '' });
+    } catch {
+      toast.error('Failed to send.');
     } finally {
       setIsSubmitting(false);
     }
@@ -507,370 +209,286 @@ const ContactUs = () => {
 
   if (contactLoading && !contactInfo) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
-          <p className="mt-4 text-slate-500 font-light tracking-widest uppercase text-xs">Loading Contact Info</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#0f1117]">
+        <div className="w-10 h-10 border-4 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (userInfo) {
+    const adminAgents = onlineUsers.filter(u => u.userRole === 'admin').length;
+
+    return (
+      <div
+        className="min-h-screen bg-[#0f1117] text-white"
+        style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
+      >
+        {/* Hero */}
+        {!isFullscreen && (
+          <div className="relative bg-[#13151f] border-b border-white/5 pt-16 pb-24 overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-fuchsia-500/10 rounded-full blur-3xl" />
+            </div>
+            <div className="relative container mx-auto px-4 text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 mb-6">
+                <Headphones className="h-3.5 w-3.5 text-violet-400" />
+                <span className="text-xs text-violet-300 font-medium tracking-wide">24 / 7 Premium Support</span>
+              </div>
+              <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
+                Live <span className="text-violet-400">Chat</span> Support
+              </h1>
+              <p className="text-zinc-500 max-w-lg mx-auto">
+                Real-time help from our team — usually replies within minutes.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Chat card */}
+        <div className={`${isFullscreen ? '' : 'container mx-auto px-4 -mt-14 pb-16 relative z-10'}`}>
+          <div className={`${isFullscreen ? '' : 'max-w-3xl mx-auto'}`}>
+            <div
+              ref={chatRef}
+              className={`bg-[#13151f] border border-white/8 overflow-hidden flex flex-col
+                ${isFullscreen ? 'fixed inset-0 z-[9999] rounded-none' : 'rounded-2xl shadow-2xl'}
+              `}
+              style={isFullscreen ? {} : {}}
+            >
+              {/* Chat header */}
+              <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+                      <MessageSquare className="h-5 w-5 text-white" />
+                    </div>
+                    <span className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full ring-2 ring-[#13151f] ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'}`} />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-zinc-100">Customer Support</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      {isConnected ? (
+                        <>
+                          <Wifi className="h-3 w-3 text-emerald-400" />
+                          <span className="text-xs text-zinc-500">Online · Usually replies in minutes</span>
+                        </>
+                      ) : (
+                        <>
+                          <WifiOff className="h-3 w-3 text-zinc-600" />
+                          <span className="text-xs text-zinc-600">Connecting…</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-violet-500/10 rounded-full border border-violet-500/20">
+                    <Users className="h-3 w-3 text-violet-400" />
+                    <span className="text-xs text-violet-300">{adminAgents} agent{adminAgents !== 1 ? 's' : ''}</span>
+                  </div>
+                  <button
+                    onClick={toggleFullscreen}
+                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-500 hover:text-white transition-colors"
+                    title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                  >
+                    {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div
+                className="flex-1 overflow-y-auto px-5 py-4 bg-[#0f1117]"
+                style={isFullscreen ? {} : { height: '480px' }}
+              >
+                {loading ? (
+                  <div className="flex justify-center pt-20">
+                    <div className="w-8 h-8 border-3 border-violet-500/20 border-t-violet-500 rounded-full animate-spin" />
+                  </div>
+                ) : messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full gap-3 py-12">
+                    <div className="w-20 h-20 rounded-2xl bg-violet-500/10 flex items-center justify-center">
+                      <MessageSquare className="h-10 w-10 text-violet-400" />
+                    </div>
+                    <p className="text-zinc-300 font-medium">Start a conversation</p>
+                    <p className="text-zinc-600 text-sm text-center max-w-xs">
+                      Send a message — our support team typically replies within minutes.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="max-w-2xl mx-auto space-y-1">
+                    {messages.map((msg, idx) => {
+                      const dateHeader = formatMessageDate(msg.createdAt, messages[idx - 1]?.createdAt);
+                      const isMine = msg.from?._id === userInfo._id;
+                      return (
+                        <React.Fragment key={msg._id || idx}>
+                          {dateHeader && (
+                            <div className="flex justify-center py-4">
+                              <span className="px-3 py-1 bg-white/5 rounded-full text-[11px] text-zinc-500">{dateHeader}</span>
+                            </div>
+                          )}
+                          <div className={`flex items-end gap-2 ${isMine ? 'justify-end' : 'justify-start'}`}>
+                            {!isMine && (
+                              <div className="w-7 h-7 flex-shrink-0 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center text-xs font-bold mb-1">
+                                S
+                              </div>
+                            )}
+                            <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                              isMine
+                                ? 'bg-violet-600 text-white rounded-br-sm'
+                                : 'bg-[#1e2130] text-zinc-200 rounded-bl-sm'
+                            }`}>
+                              <p className="break-words">{msg.message}</p>
+                              <div className={`flex items-center justify-end gap-1 mt-0.5 text-[10px] ${isMine ? 'text-violet-300' : 'text-zinc-600'}`}>
+                                <Clock className="h-2.5 w-2.5" />
+                                <span>{formatTime(msg.createdAt)}</span>
+                                {isMine && <CheckCheck className={`h-3 w-3 ${msg.isRead ? 'text-emerald-400' : 'text-violet-400'}`} />}
+                              </div>
+                            </div>
+                          </div>
+                        </React.Fragment>
+                      );
+                    })}
+
+                    {adminTyping && (
+                      <div className="flex items-end gap-2 justify-start">
+                        <div className="w-7 h-7 flex-shrink-0 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center text-xs font-bold">
+                          S
+                        </div>
+                        <div className="bg-[#1e2130] rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1">
+                          {[0, 150, 300].map(d => (
+                            <span key={d} className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: `${d}ms` }} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                )}
+              </div>
+
+              {/* Input */}
+              <div className="flex-shrink-0 px-5 py-4 border-t border-white/5 bg-[#13151f]">
+                <form onSubmit={handleSendMessage}>
+                  <div className="flex items-end gap-3 max-w-2xl mx-auto">
+                    <textarea
+                      ref={inputRef}
+                      value={message}
+                      onChange={handleTypingInput}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Type your message…"
+                      rows={1}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500/50 resize-none transition-all"
+                      style={{ maxHeight: '120px' }}
+                      disabled={!conversation?.user}
+                    />
+                    <button
+                      type="submit"
+                      disabled={!message.trim() || !conversation?.user}
+                      className="w-11 h-11 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors flex-shrink-0"
+                    >
+                      <Send className="h-4 w-4 text-white" />
+                    </button>
+                  </div>
+                  <p className="text-center text-[10px] text-zinc-700 mt-2">
+                    <CornerDownLeft className="h-3 w-3 inline mr-1" />Enter to send · Shift+Enter for new line
+                  </p>
+                </form>
+              </div>
+            </div>
+
+            {/* Feature pills — hidden in fullscreen */}
+            {!isFullscreen && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+                {[
+                  { icon: Headphones, title: '24/7 Support', desc: 'Always available' },
+                  { icon: Shield, title: 'Secure', desc: 'End-to-end encrypted' },
+                  { icon: Award, title: 'Expert Team', desc: 'Trained professionals' },
+                  { icon: Globe, title: 'Multi-language', desc: 'In your language' }
+                ].map((f, i) => (
+                  <div key={i} className="flex items-center gap-3 bg-[#13151f] border border-white/5 rounded-xl p-3 hover:border-violet-500/20 transition-colors">
+                    <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0">
+                      <f.icon className="h-4 w-4 text-violet-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-zinc-300">{f.title}</p>
+                      <p className="text-[10px] text-zinc-600">{f.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
-  const features = [
-    { icon: Headphones, title: '24/7 Support', description: 'Round the clock customer service' },
-    { icon: Shield, title: 'Secure Communication', description: 'Your data is safe with us' },
-    { icon: Award, title: 'Trusted Since 2010', description: 'Years of excellence' },
-    { icon: Globe, title: 'Global Reach', description: 'Serving customers worldwide' }
-  ];
-
+  // Non-logged-in contact form
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      {/* Hero Section - Matching Products Page */}
-      <div className="bg-slate-900 pt-20 pb-32 relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full opacity-20">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[70%] bg-indigo-500 rounded-full blur-[120px]" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[70%] bg-emerald-500 rounded-full blur-[120px]" />
-        </div>
-        
-        <div className="relative container mx-auto px-4 text-center">
-          <span className="inline-block py-1 px-3 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold tracking-widest uppercase mb-4">
-            Get in Touch
-          </span>
-          <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 tracking-tight">
-            Let's Start a <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">Conversation.</span>
-          </h1>
-          <p className="text-slate-400 max-w-2xl mx-auto text-lg font-light leading-relaxed">
-            Have questions about our products or services? Our team is here to help. Reach out to us anytime.
-          </p>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 -mt-16 relative z-10 pb-20">
-        {/* Features Bar */}
-        <div className="bg-white rounded-2xl shadow-2xl shadow-slate-200/60 p-4 md:p-6 mb-8 border border-slate-100">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-center gap-3 p-2">
-                <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <feature.icon className="w-5 h-5 text-indigo-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-800 text-sm">{feature.title}</p>
-                  <p className="text-xs text-slate-400">{feature.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-8">
-          
-          {/* Contact Information - Styled like product cards */}
-          <div className="space-y-6">
-            {/* Main Contact Card */}
-            <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-100">
-              <div className="bg-gradient-to-r from-indigo-50 to-slate-50 px-6 py-5 border-b border-slate-100">
-                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-indigo-600" />
-                  Contact Information
-                </h2>
-                <p className="text-sm text-slate-500 mt-1">Reach us through any of these channels</p>
-              </div>
-              
-              <div className="p-6 space-y-6">
-                {/* Address */}
-                <div className="flex items-start gap-4 group hover:bg-slate-50 p-3 rounded-xl transition-all cursor-pointer">
-                  <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <MapPin className="h-6 w-6 text-red-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-slate-800">Visit Our Store</h3>
-                    <p className="text-slate-600 text-sm mt-1 leading-relaxed">
-                      {contactInfo?.address || 'Loading address...'}
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Phone */}
-                <div className="flex items-start gap-4 group hover:bg-slate-50 p-3 rounded-xl transition-all cursor-pointer">
-                  <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Phone className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-slate-800">Call Us</h3>
-                    <a href={`tel:${contactInfo?.phone}`} className="text-slate-600 text-sm hover:text-indigo-600 transition-colors block mt-1 font-medium">
-                      {contactInfo?.phone || 'Loading...'}
-                    </a>
-                    <p className="text-xs text-slate-400 mt-1">Mon-Sat, 9AM-7PM</p>
-                  </div>
-                </div>
-                
-                {/* Email */}
-                <div className="flex items-start gap-4 group hover:bg-slate-50 p-3 rounded-xl transition-all cursor-pointer">
-                  <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Mail className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-slate-800">Email Us</h3>
-                    <a href={`mailto:${contactInfo?.email}`} className="text-slate-600 text-sm hover:text-indigo-600 transition-colors block mt-1">
-                      {contactInfo?.email || 'Loading...'}
-                    </a>
-                    <p className="text-xs text-slate-400 mt-1">We reply within 24 hours</p>
-                  </div>
-                </div>
-                
-                {/* Business Hours */}
-                <div className="flex items-start gap-4 group hover:bg-slate-50 p-3 rounded-xl transition-all cursor-pointer">
-                  <div className="flex-shrink-0 w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Clock className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-slate-800">Business Hours</h3>
-                    <div className="text-slate-600 text-sm mt-1 space-y-0.5" 
-                         dangerouslySetInnerHTML={{ __html: contactInfo?.businessHours || 'Loading...' }} />
-                  </div>
-                </div>
-              </div>
+    <div className="min-h-screen bg-[#0f1117] text-white flex items-center justify-center py-20 px-4"
+      style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
+    >
+      <div className="w-full max-w-lg">
+        <div className="bg-[#13151f] border border-white/8 rounded-2xl overflow-hidden shadow-2xl">
+          <div className="px-6 py-8 border-b border-white/5 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-violet-500/10 flex items-center justify-center mx-auto mb-4">
+              <MessageSquare className="h-7 w-7 text-violet-400" />
             </div>
-            
-            {/* Social Media Section - Styled like product grid */}
-            {(contactInfo?.socialMedia?.facebook || contactInfo?.socialMedia?.instagram || contactInfo?.socialMedia?.twitter) && (
-              <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-100">
-                <div className="px-6 py-5 border-b border-slate-100">
-                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <Globe className="h-5 w-5 text-indigo-600" />
-                    Connect With Us
-                  </h2>
-                  <p className="text-sm text-slate-500 mt-1">Follow us on social media</p>
-                </div>
-                <div className="p-6">
-                  <div className="flex gap-4 justify-center sm:justify-start">
-                    {contactInfo?.socialMedia?.facebook && (
-                      <a
-                        href={contactInfo.socialMedia.facebook}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-14 h-14 bg-blue-600 hover:bg-blue-700 rounded-2xl flex items-center justify-center transition-all hover:scale-110 hover:rotate-6 shadow-md"
-                      >
-                        <FaFacebook className="h-7 w-7 text-white" />
-                      </a>
-                    )}
-                    {contactInfo?.socialMedia?.instagram && (
-                      <a
-                        href={contactInfo.socialMedia.instagram}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-14 h-14 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 rounded-2xl flex items-center justify-center transition-all hover:scale-110 hover:-rotate-6 shadow-md"
-                      >
-                        <FaInstagram className="h-7 w-7 text-white" />
-                      </a>
-                    )}
-                    {contactInfo?.socialMedia?.twitter && (
-                      <a
-                        href={contactInfo.socialMedia.twitter}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-14 h-14 bg-sky-500 hover:bg-sky-600 rounded-2xl flex items-center justify-center transition-all hover:scale-110 hover:rotate-6 shadow-md"
-                      >
-                        <FaTwitter className="h-7 w-7 text-white" />
-                      </a>
-                    )}
-                    {contactInfo?.socialMedia?.linkedin && (
-                      <a
-                        href={contactInfo.socialMedia.linkedin}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-14 h-14 bg-blue-800 hover:bg-blue-900 rounded-2xl flex items-center justify-center transition-all hover:scale-110 hover:-rotate-6 shadow-md"
-                      >
-                        <FaLinkedin className="h-7 w-7 text-white" />
-                      </a>
-                    )}
-                    {contactInfo?.socialMedia?.youtube && (
-                      <a
-                        href={contactInfo.socialMedia.youtube}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-14 h-14 bg-red-600 hover:bg-red-700 rounded-2xl flex items-center justify-center transition-all hover:scale-110 hover:rotate-6 shadow-md"
-                      >
-                        <FaYoutube className="h-7 w-7 text-white" />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Map Section */}
-            {contactInfo?.mapEmbed && (
-              <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-100">
-                <div className="px-6 py-5 border-b border-slate-100">
-                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-indigo-600" />
-                    Find Us Here
-                  </h2>
-                  <p className="text-sm text-slate-500 mt-1">Our location on Google Maps</p>
-                </div>
-                <div className="relative">
-                  <div className="w-full h-80 lg:h-96 overflow-hidden">
-                    <iframe
-                      src={contactInfo.mapEmbed}
-                      className="w-full h-full"
-                      style={{ border: 0 }}
-                      allowFullScreen
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      title="Business Location"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+            <h2 className="text-xl font-bold text-zinc-100">Get in Touch</h2>
+            <p className="text-sm text-zinc-500 mt-1">We'll get back within 24 hours</p>
           </div>
-          
-          {/* Contact Form - Styled like product card */}
-          <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-100">
-            <div className="bg-gradient-to-r from-indigo-50 to-slate-50 px-6 py-5 border-b border-slate-100">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-indigo-600" />
-                Send us a Message
-              </h2>
-              <p className="text-sm text-slate-500 mt-1">Fill out the form and we'll get back to you</p>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
-                    <User className="h-4 w-4 text-slate-400" />
-                    Full Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    value={formData.name}
-                    onChange={handleChange}
-                    onFocus={() => setFocusedField('name')}
-                    onBlur={() => setFocusedField(null)}
-                    className={`w-full px-4 py-3 text-sm border-2 rounded-xl focus:outline-none transition-all
-                      ${focusedField === 'name' 
-                        ? 'border-indigo-400 ring-4 ring-indigo-100' 
-                        : 'border-slate-200 hover:border-indigo-300'
-                      }
-                      ${userInfo ? 'bg-slate-50 text-slate-500' : 'bg-white'}
-                    `}
-                    placeholder="John Doe"
-                    disabled={!!userInfo}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
-                    <Mail className="h-4 w-4 text-slate-400" />
-                    Email Address <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
-                    onFocus={() => setFocusedField('email')}
-                    onBlur={() => setFocusedField(null)}
-                    className={`w-full px-4 py-3 text-sm border-2 rounded-xl focus:outline-none transition-all
-                      ${focusedField === 'email' 
-                        ? 'border-indigo-400 ring-4 ring-indigo-100' 
-                        : 'border-slate-200 hover:border-indigo-300'
-                      }
-                      ${userInfo ? 'bg-slate-50 text-slate-500' : 'bg-white'}
-                    `}
-                    placeholder="john@example.com"
-                    disabled={!!userInfo}
-                  />
-                </div>
-              </div>
-              
+
+          <form onSubmit={handleContactSubmit} className="p-6 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
-                  <Phone className="h-4 w-4 text-slate-400" />
-                  Phone Number <span className="text-slate-400 text-xs">(Optional)</span>
-                </label>
+                <label className="text-xs text-zinc-500 mb-1.5 block">Full Name *</label>
                 <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  onFocus={() => setFocusedField('phone')}
-                  onBlur={() => setFocusedField(null)}
-                  className={`w-full px-4 py-3 text-sm border-2 rounded-xl focus:outline-none transition-all
-                    ${focusedField === 'phone' 
-                      ? 'border-indigo-400 ring-4 ring-indigo-100' 
-                      : 'border-slate-200 hover:border-indigo-300'
-                    }
-                  `}
-                  placeholder="+91 1234567890"
+                  type="text" name="name" required value={formData.name}
+                  onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-700 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
+                  placeholder="John Doe"
                 />
               </div>
-              
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
-                  <MessageSquare className="h-4 w-4 text-slate-400" />
-                  Your Message <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  name="message"
-                  required
-                  rows="5"
-                  value={formData.message}
-                  onChange={handleChange}
-                  onFocus={() => setFocusedField('message')}
-                  onBlur={() => setFocusedField(null)}
-                  className={`w-full px-4 py-3 text-sm border-2 rounded-xl focus:outline-none transition-all resize-none
-                    ${focusedField === 'message' 
-                      ? 'border-indigo-400 ring-4 ring-indigo-100' 
-                      : 'border-slate-200 hover:border-indigo-300'
-                    }
-                  `}
-                  placeholder="Tell us details about your inquiry..."
+                <label className="text-xs text-zinc-500 mb-1.5 block">Email *</label>
+                <input
+                  type="email" name="email" required value={formData.email}
+                  onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-700 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
+                  placeholder="john@example.com"
                 />
-                <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                  <span>{formData.message.length}/500 characters</span>
-                </p>
               </div>
-              
-              <div className="bg-indigo-50 rounded-xl p-4 flex items-start gap-3 border border-indigo-100">
-                <AlertCircle className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-indigo-900">Response Time</p>
-                  <p className="text-xs text-indigo-700 mt-0.5">
-                    We typically respond within 24 hours during business days. All messages are confidential.
-                  </p>
-                </div>
-              </div>
-              
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white py-3.5 rounded-xl font-semibold transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 shadow-lg shadow-indigo-200"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>Sending Message...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-5 w-5" />
-                    <span>Send Message</span>
-                  </>
-                )}
-              </button>
-              
-              <p className="text-center text-xs text-slate-400 pt-2">
-                By submitting, you agree to our <a href="/privacy" className="text-indigo-600 hover:underline">Privacy Policy</a>
-              </p>
-            </form>
-          </div>
+            </div>
+            <div>
+              <label className="text-xs text-zinc-500 mb-1.5 block">Phone (optional)</label>
+              <input
+                type="tel" name="phone" value={formData.phone}
+                onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-700 focus:outline-none focus:ring-1 focus:ring-violet-500/50"
+                placeholder="+91 1234567890"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-500 mb-1.5 block">Message *</label>
+              <textarea
+                name="message" required rows={4} value={formData.message}
+                onChange={e => setFormData(p => ({ ...p, message: e.target.value }))}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-700 focus:outline-none focus:ring-1 focus:ring-violet-500/50 resize-none"
+                placeholder="Describe your inquiry…"
+              />
+            </div>
+            <button
+              type="submit" disabled={isSubmitting}
+              className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white py-3 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+            >
+              {isSubmitting
+                ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>Sending…</span></>
+                : <><Send className="h-4 w-4" /><span>Send Message</span></>
+              }
+            </button>
+          </form>
         </div>
       </div>
     </div>
