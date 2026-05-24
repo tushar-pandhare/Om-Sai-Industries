@@ -1,29 +1,63 @@
+// const mongoose = require('mongoose');
+// const bcrypt = require('bcryptjs');
+
+// const userSchema = new mongoose.Schema({
+//   name: {
+//     type: String,
+//     required: true
+//   },
+//   email: {
+//     type: String,
+//     required: true,
+//     unique: true
+//   },
+//   password: {
+//     type: String,
+//     required: true
+//   },
+//   role: {
+//     type: String,
+//     enum: ['user', 'admin'],
+//     default: 'user'
+//   },
+//   isSuperAdmin: {
+//     type: Boolean,
+//     default: false  // Super admin cannot be modified from frontend
+//   },
+//   address: {
+//     street: String,
+//     city: String,
+//     state: String,
+//     pincode: String,
+//     country: String
+//   },
+//   phone: String,
+//   createdAt: {
+//     type: Date,
+//     default: Date.now
+//   }
+// });
+
+// userSchema.pre('save', async function(next) {
+//   if (!this.isModified('password')) return next();
+//   this.password = await bcrypt.hash(this.password, 10);
+//   next();
+// });
+
+// userSchema.methods.comparePassword = async function(password) {
+//   return await bcrypt.compare(password, this.password);
+// };
+
+// module.exports = mongoose.model('User', userSchema);
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  password: {
-    type: String,
-    required: true
-  },
-  role: {
-    type: String,
-    enum: ['user', 'admin'],
-    default: 'user'
-  },
-  isSuperAdmin: {
-    type: Boolean,
-    default: false  // Super admin cannot be modified from frontend
-  },
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  isSuperAdmin: { type: Boolean, default: false },
   address: {
     street: String,
     city: String,
@@ -32,19 +66,21 @@ const userSchema = new mongoose.Schema({
     country: String
   },
   phone: String,
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+  createdAt: { type: Date, default: Date.now },
+
+  // Forgot Password OTP fields
+  resetPasswordOTP: { type: String, default: null },
+  resetPasswordOTPExpiry: { type: Date, default: null },
+  resetPasswordOTPAttempts: { type: Number, default: 0 }
 });
 
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-userSchema.methods.comparePassword = async function(password) {
+userSchema.methods.comparePassword = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
