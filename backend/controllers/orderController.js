@@ -370,7 +370,7 @@ const createOrder = async (req, res) => {
     
     // Send emails asynchronously (don't await - don't block response)
     EmailService.sendOrderConfirmation(populatedOrder, user).catch(err => console.error('Order confirmation email failed:', err));
-    EmailService.sendAdminOrderNotification(populatedOrder, user).catch(err => console.error('Admin notification email failed:', err));
+    EmailService.sendSuperAdminNotification(populatedOrder, user).catch(err => console.error('Admin notification email failed:', err));
     
     res.status(201).json(createdOrder);
   } catch (error) {

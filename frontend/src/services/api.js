@@ -1,40 +1,24 @@
 // import axios from 'axios';
 
-// // Vite uses import.meta.env - use VITE_ prefix
 // const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-// console.log('API_URL:', API_URL); // Debug log
 
 // const api = axios.create({
 //   baseURL: API_URL,
-//   headers: {
-//     'Content-Type': 'application/json',
-//   },
+//   headers: { 'Content-Type': 'application/json' },
 // });
 
-// // Request interceptor to add token
 // api.interceptors.request.use(
 //   (config) => {
 //     const token = localStorage.getItem('token');
-//     if (token) {
-//       config.headers.Authorization = `Bearer ${token}`;
-//     }
-//     console.log(`📡 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+//     if (token) config.headers.Authorization = `Bearer ${token}`;
 //     return config;
 //   },
-//   (error) => {
-//     return Promise.reject(error);
-//   }
+//   (error) => Promise.reject(error)
 // );
 
-// // Response interceptor for error handling
 // api.interceptors.response.use(
-//   (response) => {
-//     console.log(`✅ API Response: ${response.config.url}`, response.status);
-//     return response;
-//   },
+//   (response) => response,
 //   (error) => {
-//     console.error(`❌ API Error: ${error.config?.url}`, error.response?.status, error.message);
 //     if (error.response?.status === 401) {
 //       localStorage.removeItem('userInfo');
 //       localStorage.removeItem('token');
@@ -50,6 +34,11 @@
 //   login: (credentials) => api.post('/auth/login', credentials),
 //   getProfile: () => api.get('/auth/profile'),
 //   updateProfile: (userData) => api.put('/auth/profile', userData),
+//   updatePassword: (data) => api.put('/auth/password', data),
+//   // Forgot password flow
+//   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+//   verifyOTP: (email, otp) => api.post('/auth/verify-otp', { email, otp }),
+//   resetPassword: (resetToken, newPassword) => api.post('/auth/reset-password', { resetToken, newPassword }),
 // };
 
 // // Product API
@@ -129,6 +118,7 @@
 // };
 
 // export default api;
+
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
